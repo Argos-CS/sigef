@@ -1,0 +1,74 @@
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.glass-content {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+.glass-content *,
+.glass-card text,
+.glass-card tspan,
+.glass-card p,
+.glass-card span,
+.glass-card h1,
+.glass-card h2,
+.glass-card h3,
+.glass-card h4,
+.glass-card h5,
+.glass-card h6,
+.glass-card div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.glass-card svg,
+.glass-card g,
+.glass-card path,
+.glass-card circle,
+.glass-card rect,
+.glass-card line {
+  filter: none !important;
+}
+
+.glass-card:hover * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Ajustes para o Select */
+[data-radix-popper-content-wrapper] {
+  background: white !important;
+}
+
+.select-content {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.select-viewport {
+  background-color: white !important;
+}
+
+.select-item {
+  background-color: white !important;
+}
+
+.select-item[data-highlighted] {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+} 
