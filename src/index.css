@@ -112,13 +112,13 @@
   .select-item,
   [role="option"],
   [role="menuitem"] {
-    @apply bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer !important;
+    @apply bg-transparent hover:bg-secondary hover:text-secondary-foreground cursor-pointer !important;
   }
 
   /* Estado highlighted/selecionado */
   .select-item[data-highlighted],
   [role="option"][data-highlighted],
   [role="menuitem"][data-highlighted] {
-    @apply bg-accent text-accent-foreground !important;
+    @apply bg-secondary text-secondary-foreground !important;
   }
 }
