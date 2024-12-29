@@ -1,7 +1,7 @@
 import { FormSection } from "../FormSection";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
-import { Movimentacao } from "@/hooks/useMovimentacoes";
+import { Movimentacao } from "@/types/movimentacao";
 
 interface DateFieldProps {
   control: Control<Movimentacao>;
@@ -15,6 +15,7 @@ export const DateField = ({ control }: DateFieldProps) => {
           type="date" 
           {...field} 
           value={field.value as string}
+          name={field.name.toString()}
         />
       )}
     </FormSection>

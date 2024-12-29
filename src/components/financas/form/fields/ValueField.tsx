@@ -1,7 +1,7 @@
 import { FormSection } from "../FormSection";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
-import { Movimentacao } from "@/hooks/useMovimentacoes";
+import { Movimentacao } from "@/types/movimentacao";
 
 interface ValueFieldProps {
   control: Control<Movimentacao>;
@@ -17,6 +17,7 @@ export const ValueField = ({ control, form }: ValueFieldProps) => {
           step="0.01"
           {...field}
           value={field.value as string}
+          name={field.name.toString()}
           onChange={(e) => {
             const value = e.target.value;
             field.onChange(value);
