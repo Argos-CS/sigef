@@ -53,6 +53,7 @@ npm run dev
 1. Crie uma conta no [Supabase](https://supabase.com)
 2. Crie um novo projeto
 3. Configure as variáveis de ambiente no arquivo `.env`:
+
    ```env
    VITE_SUPABASE_URL=sua-url-do-supabase
    VITE_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
@@ -73,6 +74,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 📧 Contato
 
 Para sugestões, dúvidas ou feedback, entre em contato conosco:
+
 - Email: [seu-email@dominio.com](mailto:seu-email@dominio.com)
 - Issues: [GitHub Issues](https://github.com/seu-usuario/sigef/issues)
 
