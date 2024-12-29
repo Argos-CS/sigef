@@ -47,7 +47,9 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
+}
 
+@layer components {
   * {
     @apply border-border;
   }
@@ -62,7 +64,6 @@
     background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%);
   }
 
-  /* Glassmorphism */
   .glass {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-lg
            transition-all duration-300 hover:shadow-xl;
@@ -82,7 +83,6 @@
     @apply bg-black/30 border-white/10;
   }
 
-  /* Login page specific styles */
   .login-background {
     background-image: url('https://bgcjnbfvgpotneswtliq.supabase.co/storage/v1/object/public/system-assets/background_login.jpg');
     background-size: cover;
@@ -95,11 +95,10 @@
     @apply absolute inset-0 bg-black/40 backdrop-blur-[2px];
   }
 
-  /* Select e Dropdown Menus */
   .select-content,
   [role="listbox"],
   [role="menu"] {
-    @apply bg-background border border-border shadow-md backdrop-blur-none !important;
+    @apply bg-background border border-border shadow-md !important;
   }
 
   .dark .select-content,
@@ -108,17 +107,15 @@
     @apply bg-background border-border/50 !important;
   }
 
-  /* Items dos menus */
   .select-item,
   [role="option"],
   [role="menuitem"] {
-    @apply bg-transparent hover:bg-secondary hover:text-secondary-foreground cursor-pointer !important;
+    @apply bg-transparent hover:bg-muted hover:text-muted-foreground cursor-pointer !important;
   }
 
-  /* Estado highlighted/selecionado */
   .select-item[data-highlighted],
   [role="option"][data-highlighted],
   [role="menuitem"][data-highlighted] {
-    @apply bg-secondary text-secondary-foreground !important;
+    @apply bg-muted text-muted-foreground !important;
   }
 }
