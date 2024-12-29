@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   LineChart,
@@ -26,6 +26,25 @@ type PeriodOption = 'mensal' | 'trimestral' | 'anual';
 
 const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('mensal');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [key, setKey] = useState(0);
+
+  // Debounced resize handler
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setKey(prev => prev + 1);
+      }, 300);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   const aggregateData = useMemo(() => {
     if (selectedPeriod === 'mensal') {
@@ -63,7 +82,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [data, selectedPeriod]);
 
-  const formatXAxis = (tickItem: string) => {
+  const formatXAxis = useCallback((tickItem: string) => {
     if (selectedPeriod === 'mensal') {
       const [ano, mes] = tickItem.split('-');
       const meses = [
@@ -76,7 +95,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
       return `${trimestre}/${ano}`;
     }
     return tickItem;
-  };
+  }, [selectedPeriod]);
 
   return (
     <Card className="glass-card">
@@ -94,9 +113,12 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
         </Select>
       </CardHeader>
       <CardContent className="pt-4">
-        <div className="h-[300px]">
+        <div ref={containerRef} className="h-[300px]" key={key}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={aggregateData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart 
+              data={aggregateData} 
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="name" 
