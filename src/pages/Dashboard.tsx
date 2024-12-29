@@ -1,13 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useMovimentacoes } from '@/hooks/useMovimentacoes';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
-import TrendChart from '@/components/dashboard/TrendChart';
-import { ExpenseAnalysisChart } from '@/components/dashboard/ExpenseAnalysisChart';
-import { ChartBar, ChartLine, Filter, Calendar } from 'lucide-react';
-import BalanceCards from '@/components/dashboard/BalanceCards';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { SaldoPorContaPie } from '@/components/dashboard/SaldoPorContaPie';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PeriodDisplay } from '@/components/dashboard/PeriodDisplay';
+import { DashboardContent } from '@/components/dashboard/DashboardContent';
 
 const Dashboard = () => {
   const { movimentacoes } = useMovimentacoes();
@@ -19,14 +15,10 @@ const Dashboard = () => {
     from: undefined,
     to: undefined
   });
-  const [conta, setConta] = useState('todas');
-  const [tipo, setTipo] = useState('todos');
 
   const resetFilters = () => {
     setTimeRange('30');
     setDateRange({ from: undefined, to: undefined });
-    setConta('todas');
-    setTipo('todos');
   };
 
   const filteredData = useMemo(() => {
@@ -40,21 +32,18 @@ const Dashboard = () => {
         hoje.setHours(23, 59, 59, 999);
       } else {
         dataInicial.setDate(hoje.getDate() - Number(timeRange));
+        dataInicial.setHours(0, 0, 0, 0);
       }
 
       return movimentacoes.filter(m => {
         const movData = new Date(m.data);
-        const passaFiltroData = movData >= dataInicial && movData <= hoje;
-        const passaFiltroConta = conta === 'todas' || m.conta === conta;
-        const passaFiltroTipo = tipo === 'todos' || m.tipo === tipo;
-
-        return passaFiltroData && passaFiltroConta && passaFiltroTipo;
+        return movData >= dataInicial && movData <= hoje;
       });
     } catch (error) {
       console.error('Erro ao filtrar dados:', error);
       return [];
     }
-  }, [movimentacoes, timeRange, dateRange, conta, tipo]);
+  }, [movimentacoes, timeRange, dateRange]);
 
   const {
     saldosPorConta,
@@ -72,30 +61,7 @@ const Dashboard = () => {
       } else {
         dataFinal = hoje;
         dataInicial = new Date(hoje);
-        
-        // Ajusta a data inicial baseado no timeRange
-        switch (timeRange) {
-          case '7':
-            dataInicial.setDate(dataFinal.getDate() - 7);
-            break;
-          case '15':
-            dataInicial.setDate(dataFinal.getDate() - 15);
-            break;
-          case '30':
-            dataInicial.setDate(dataFinal.getDate() - 30);
-            break;
-          case '90':
-            dataInicial.setDate(dataFinal.getDate() - 90);
-            break;
-          case '180':
-            dataInicial.setDate(dataFinal.getDate() - 180);
-            break;
-          case '365':
-            dataInicial.setDate(dataFinal.getDate() - 365);
-            break;
-          default:
-            dataInicial.setDate(dataFinal.getDate() - 30);
-        }
+        dataInicial.setDate(dataFinal.getDate() - Number(timeRange));
       }
 
       // Ajusta as horas para início e fim do dia
@@ -165,7 +131,7 @@ const Dashboard = () => {
         movimentacoes: movimentacoesPeriodo
       };
 
-      // Calcula dados dos últimos 12 meses independente do filtro
+      // Calcula dados dos últimos 12 meses
       const inicioUltimos12Meses = new Date(hoje);
       inicioUltimos12Meses.setMonth(hoje.getMonth() - 11);
       inicioUltimos12Meses.setDate(1);
@@ -216,112 +182,32 @@ const Dashboard = () => {
         dadosUltimos12Meses: []
       };
     }
-  }, [movimentacoes]);
-
-  const getPeriodoFormatado = () => {
-    try {
-      if (timeRange === 'custom' && dateRange.from && dateRange.to) {
-        return `${format(dateRange.from, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} até ${format(dateRange.to, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
-      }
-
-      const hoje = new Date();
-      const inicio = new Date();
-      inicio.setDate(hoje.getDate() - Number(timeRange));
-      
-      return `${format(inicio, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} até ${format(hoje, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
-    } catch (error) {
-      console.error('Erro ao formatar período:', error);
-      return 'Período não definido';
-    }
-  };
+  }, [movimentacoes, timeRange, dateRange]);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Dashboard Financeiro
-            </h1>
-            <div className="flex items-center gap-2">
-              <ChartBar className="h-6 w-6 text-primary" />
-              <ChartLine className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <p className="text-muted-foreground">
-            Visualize e analise suas movimentações financeiras
-          </p>
-        </div>
+        <DashboardHeader />
 
         {/* Filters Section */}
         <div className="glass p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Filtros</h2>
-          </div>
           <DashboardFilters
             timeRange={timeRange}
             setTimeRange={setTimeRange}
             dateRange={dateRange}
             setDateRange={setDateRange}
-            conta={conta}
-            setConta={setConta}
-            tipo={tipo}
-            setTipo={setTipo}
             onReset={resetFilters}
           />
         </div>
 
-        {/* Período Selecionado */}
-        <div className="glass p-4 rounded-xl">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground">Período selecionado</h2>
-              <p className="text-lg font-medium">{getPeriodoFormatado()}</p>
-            </div>
-          </div>
-        </div>
+        <PeriodDisplay timeRange={timeRange} dateRange={dateRange} />
 
-        {/* Balance Cards */}
-        <div className="glass-card p-6">
-          <BalanceCards 
-            balances={saldosPorConta}
-            closingDate={dateRange.to || new Date()}
-            initialDate={dateRange.from || (() => {
-              const date = new Date();
-              date.setDate(date.getDate() - Number(timeRange));
-              return date;
-            })()}
-          />
-        </div>
-
-        {/* Distribution Charts - Side by Side */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="glass-card p-6 h-full">
-            <div className="glass-content">
-              <SaldoPorContaPie 
-                saldos={saldosPorConta.final} 
-              />
-            </div>
-          </div>
-          <div className="glass-card p-6 h-full">
-            <div className="glass-content">
-              <ExpenseAnalysisChart filteredData={filteredData} />
-            </div>
-          </div>
-        </div>
-
-        {/* Movimentação Mensal (últimos 12 meses) */}
-        <div className="glass-card p-6">
-          <div className="glass-content">
-            <TrendChart
-              data={dadosUltimos12Meses}
-              title="Movimentação Mensal (Últimos 12 Meses)"
-            />
-          </div>
-        </div>
+        <DashboardContent 
+          filteredData={filteredData}
+          saldosPorConta={saldosPorConta}
+          dadosUltimos12Meses={dadosUltimos12Meses}
+          dateRange={dateRange}
+        />
       </div>
     </div>
   );

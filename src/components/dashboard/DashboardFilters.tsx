@@ -1,9 +1,9 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
+import { Filter } from 'lucide-react';
 
 interface DashboardFiltersProps {
   timeRange: string;
@@ -16,10 +16,6 @@ interface DashboardFiltersProps {
     from: Date | undefined;
     to: Date | undefined;
   }>>;
-  conta: string;
-  setConta: (value: string) => void;
-  tipo: string;
-  setTipo: (value: string) => void;
   onReset: () => void;
 }
 
@@ -28,15 +24,16 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
   setTimeRange,
   dateRange,
   setDateRange,
-  conta,
-  setConta,
-  tipo,
-  setTipo,
   onReset
 }) => {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Filter className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">Filtros</h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="periodo">Período</Label>
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -74,35 +71,6 @@ const DashboardFilters: React.FC<DashboardFiltersProps> = ({
             </div>
           </>
         )}
-
-        <div className="space-y-2">
-          <Label htmlFor="conta">Conta</Label>
-          <Select value={conta} onValueChange={setConta}>
-            <SelectTrigger id="conta">
-              <SelectValue placeholder="Selecione a conta" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-              <SelectItem value="Bradesco">Bradesco</SelectItem>
-              <SelectItem value="Cora">Cora</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="tipo">Tipo</Label>
-          <Select value={tipo} onValueChange={setTipo}>
-            <SelectTrigger id="tipo">
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="entrada">Entradas</SelectItem>
-              <SelectItem value="saida">Saídas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       <div className="flex justify-end">
