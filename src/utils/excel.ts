@@ -5,21 +5,18 @@ export async function exportarParaExcel(movimentacoes: Movimentacao[], filename:
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Movimentações');
 
-  // Definir colunas
   worksheet.columns = [
     { header: 'Data', key: 'data', width: 15 },
     { header: 'Tipo', key: 'tipo', width: 10 },
     { header: 'Descrição', key: 'descricao', width: 30 },
     { header: 'Valor', key: 'valor', width: 15 },
     { header: 'Conta', key: 'conta', width: 15 },
-    { header: 'Categoria', key: 'categoria_id', width: 15 }
+    { header: 'Categoria', key: 'categoria_id', width: 20 },
   ];
 
-  // Estilo para o cabeçalho
   worksheet.getRow(1).font = { bold: true };
   worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-  // Adicionar dados
   movimentacoes.forEach(mov => {
     worksheet.addRow({
       data: mov.data,
@@ -27,11 +24,10 @@ export async function exportarParaExcel(movimentacoes: Movimentacao[], filename:
       descricao: mov.descricao,
       valor: mov.valor,
       conta: mov.conta,
-      categoria_id: mov.categoria_id
+      categoria_id: mov.categoria_id || '',
     });
   });
 
-  // Gerar arquivo
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = window.URL.createObjectURL(blob);
@@ -49,18 +45,17 @@ export async function importarDoExcel(file: File): Promise<Movimentacao[]> {
   const worksheet = workbook.getWorksheet(1);
   const movimentacoes: Movimentacao[] = [];
 
-  // Pular a primeira linha (cabeçalho)
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
 
     const movimentacao: Movimentacao = {
       id: crypto.randomUUID(),
-      data: row.getCell(1).value?.toString() || new Date().toISOString(),
+      data: row.getCell(1).value?.toString() || new Date().toISOString().split('T')[0],
       tipo: (row.getCell(2).value?.toString()?.toLowerCase() || 'entrada') as MovimentacaoTipo,
       descricao: row.getCell(3).value?.toString() || '',
-      valor: Number(row.getCell(4).value) || 0,
-      conta: (row.getCell(5).value?.toString() || 'CAIXA') as ContaTipo,
-      categoria_id: row.getCell(6).value?.toString(),
+      valor: row.getCell(4).value?.toString() || '0',
+      conta: (row.getCell(5).value?.toString() || 'Dinheiro') as ContaTipo,
+      categoria_id: row.getCell(6).value?.toString() || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_approved: false

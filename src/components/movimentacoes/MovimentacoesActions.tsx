@@ -33,7 +33,6 @@ export function MovimentacoesActions() {
 
       const movimentacoesImportadas = await importarDoExcel(file);
       
-      // Adicionar cada movimentação individualmente
       for (const mov of movimentacoesImportadas) {
         const { id, created_at, updated_at, is_approved, ...movimentacaoData } = mov;
         await addMovimentacao(movimentacaoData);
@@ -44,7 +43,6 @@ export function MovimentacoesActions() {
         description: `${movimentacoesImportadas.length} movimentações foram importadas com sucesso!`,
       });
 
-      // Limpar input
       event.target.value = '';
     } catch (error) {
       console.error('Erro ao importar:', error);
