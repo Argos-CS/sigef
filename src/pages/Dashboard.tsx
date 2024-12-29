@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useMovimentacoes } from '@/hooks/useMovimentacoes';
-import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { PeriodDisplay } from '@/components/dashboard/PeriodDisplay';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 
 const Dashboard = () => {
@@ -50,7 +48,6 @@ const Dashboard = () => {
     dadosUltimos12Meses
   } = useMemo(() => {
     try {
-      // Calcula as datas inicial e final com base no filtro
       const hoje = new Date();
       let dataInicial: Date;
       let dataFinal: Date;
@@ -64,11 +61,9 @@ const Dashboard = () => {
         dataInicial.setDate(dataFinal.getDate() - Number(timeRange));
       }
 
-      // Ajusta as horas para início e fim do dia
       dataInicial.setHours(0, 0, 0, 0);
       dataFinal.setHours(23, 59, 59, 999);
 
-      // Calcula saldos iniciais (até a data inicial)
       const saldosIniciais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
         if (movData < dataInicial) {
@@ -78,7 +73,6 @@ const Dashboard = () => {
         return acc;
       }, {} as Record<string, number>);
 
-      // Calcula saldos finais (até a data final)
       const saldosFinais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
         if (movData <= dataFinal) {
@@ -88,10 +82,8 @@ const Dashboard = () => {
         return acc;
       }, {} as Record<string, number>);
 
-      // Ordena as contas alfabeticamente
       const contasOrdenadas = Object.keys({ ...saldosIniciais, ...saldosFinais }).sort();
       
-      // Cria objetos ordenados com todas as contas
       const saldosIniciaisOrdenados: Record<string, number> = {};
       const saldosFinaisOrdenados: Record<string, number> = {};
       
@@ -100,11 +92,9 @@ const Dashboard = () => {
         saldosFinaisOrdenados[conta] = saldosFinais[conta] || 0;
       });
 
-      // Calcula totais
       const totalInicial = Object.values(saldosIniciaisOrdenados).reduce((sum, value) => sum + value, 0);
       const totalFinal = Object.values(saldosFinaisOrdenados).reduce((sum, value) => sum + value, 0);
 
-      // Calcula movimentações do período (entre data inicial e final)
       const movimentacoesPeriodo = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
         if (movData >= dataInicial && movData <= dataFinal) {
@@ -131,7 +121,6 @@ const Dashboard = () => {
         movimentacoes: movimentacoesPeriodo
       };
 
-      // Calcula dados dos últimos 12 meses
       const inicioUltimos12Meses = new Date(hoje);
       inicioUltimos12Meses.setMonth(hoje.getMonth() - 11);
       inicioUltimos12Meses.setDate(1);
@@ -188,25 +177,16 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-8">
         <DashboardHeader />
-
-        {/* Filters Section */}
-        <div className="glass p-4 rounded-xl">
-          <DashboardFilters
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            onReset={resetFilters}
-          />
-        </div>
-
-        <PeriodDisplay timeRange={timeRange} dateRange={dateRange} />
-
+        
         <DashboardContent 
           filteredData={filteredData}
           saldosPorConta={saldosPorConta}
           dadosUltimos12Meses={dadosUltimos12Meses}
           dateRange={dateRange}
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          setDateRange={setDateRange}
+          onReset={resetFilters}
         />
       </div>
     </div>

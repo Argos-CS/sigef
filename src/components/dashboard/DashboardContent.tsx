@@ -1,6 +1,6 @@
 import React from 'react';
 import { Movimentacao } from '@/hooks/useMovimentacoes';
-import BalanceCards from './BalanceCards';
+import { UnifiedFiltersSection } from './UnifiedFiltersSection';
 import { SaldoPorContaPie } from './SaldoPorContaPie';
 import { ExpenseAnalysisChart } from './ExpenseAnalysisChart';
 import TrendChart from './TrendChart';
@@ -24,28 +24,36 @@ interface DashboardContentProps {
     from: Date | undefined;
     to: Date | undefined;
   };
+  timeRange: string;
+  setTimeRange: (value: string) => void;
+  setDateRange: React.Dispatch<React.SetStateAction<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>>;
+  onReset: () => void;
 }
 
 export const DashboardContent = ({ 
   filteredData, 
   saldosPorConta, 
   dadosUltimos12Meses,
-  dateRange 
+  dateRange,
+  timeRange,
+  setTimeRange,
+  setDateRange,
+  onReset
 }: DashboardContentProps) => {
   return (
-    <>
-      {/* Balance Cards */}
-      <div className="glass-card p-6">
-        <BalanceCards 
-          balances={saldosPorConta}
-          closingDate={dateRange.to || new Date()}
-          initialDate={dateRange.from || (() => {
-            const date = new Date();
-            date.setDate(date.getDate() - 30);
-            return date;
-          })()}
-        />
-      </div>
+    <div className="space-y-6">
+      {/* Unified Filters Section */}
+      <UnifiedFiltersSection
+        timeRange={timeRange}
+        setTimeRange={setTimeRange}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        onReset={onReset}
+        saldosPorConta={saldosPorConta}
+      />
 
       {/* Distribution Charts - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -70,6 +78,6 @@ export const DashboardContent = ({
           />
         </div>
       </div>
-    </>
+    </div>
   );
 };

@@ -12,17 +12,21 @@ interface PeriodDisplayProps {
 }
 
 export const PeriodDisplay = ({ timeRange, dateRange }: PeriodDisplayProps) => {
+  const formatDate = (date: Date) => {
+    return format(date, 'dd/MM/yyyy', { locale: ptBR });
+  };
+
   const getPeriodoFormatado = () => {
     try {
       if (timeRange === 'custom' && dateRange.from && dateRange.to) {
-        return `${format(dateRange.from, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} até ${format(dateRange.to, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+        return `${formatDate(dateRange.from)} até ${formatDate(dateRange.to)}`;
       }
 
       const hoje = new Date();
       const inicio = new Date();
       inicio.setDate(hoje.getDate() - Number(timeRange));
       
-      return `${format(inicio, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} até ${format(hoje, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+      return `${formatDate(inicio)} até ${formatDate(hoje)}`;
     } catch (error) {
       console.error('Erro ao formatar período:', error);
       return 'Período não definido';
@@ -30,7 +34,7 @@ export const PeriodDisplay = ({ timeRange, dateRange }: PeriodDisplayProps) => {
   };
 
   return (
-    <div className="glass p-4 rounded-xl">
+    <div className="p-4 rounded-xl">
       <div className="flex items-center gap-2">
         <Calendar className="h-5 w-5 text-primary" />
         <div>
