@@ -110,12 +110,12 @@
   .select-item,
   [role="option"],
   [role="menuitem"] {
-    @apply bg-transparent hover:bg-muted hover:text-muted-foreground cursor-pointer !important;
+    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer !important;
   }
 
   .select-item[data-highlighted],
   [role="option"][data-highlighted],
   [role="menuitem"][data-highlighted] {
-    @apply bg-muted text-muted-foreground !important;
+    @apply bg-gray-100 dark:bg-gray-800 !important;
   }
 }
