@@ -95,22 +95,17 @@
     @apply absolute inset-0 bg-black/40 backdrop-blur-[2px];
   }
 
-  /* Correções para menus suspensos */
-  [data-radix-popper-content-wrapper] {
-    @apply z-50;
-  }
-
   /* Select e Dropdown Menus */
   .select-content,
   [role="listbox"],
   [role="menu"] {
-    @apply bg-popover border border-border shadow-md backdrop-blur-none !important;
+    @apply bg-background border border-border shadow-md backdrop-blur-none !important;
   }
 
   .dark .select-content,
   .dark [role="listbox"],
   .dark [role="menu"] {
-    @apply bg-popover border-border/50 !important;
+    @apply bg-background border-border/50 !important;
   }
 
   /* Items dos menus */
