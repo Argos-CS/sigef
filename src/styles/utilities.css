@@ -1,0 +1,27 @@
+@tailwind utilities;
+
+@layer utilities {
+  .select-content,
+  [role="listbox"],
+  [role="menu"] {
+    @apply bg-background border border-border shadow-md !important;
+  }
+
+  .dark .select-content,
+  .dark [role="listbox"],
+  .dark [role="menu"] {
+    @apply bg-background border-border/50 !important;
+  }
+
+  .select-item,
+  [role="option"],
+  [role="menuitem"] {
+    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer !important;
+  }
+
+  .select-item[data-highlighted],
+  [role="option"][data-highlighted],
+  [role="menuitem"][data-highlighted] {
+    @apply bg-gray-100 dark:bg-gray-800 !important;
+  }
+}
