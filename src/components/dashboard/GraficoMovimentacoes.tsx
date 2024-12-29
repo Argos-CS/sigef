@@ -1,10 +1,16 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Movimentacao } from '@/hooks/useMovimentacoes';
+import { Movimentacao } from '@/types/movimentacao';
 
 interface GraficoMovimentacoesProps {
   movimentacoes: Movimentacao[];
+}
+
+interface CategoriaTotal {
+  categoria: string;
+  total: number;
+  nome: string;
 }
 
 const formatarMoeda = (valor: number) => {
@@ -13,10 +19,9 @@ const formatarMoeda = (valor: number) => {
 
 const GraficoMovimentacoes: React.FC<GraficoMovimentacoesProps> = ({ movimentacoes }) => {
   const dadosGrafico = useMemo(() => {
-    // Filtrar apenas as saídas e agrupar por categoria
     const saidasPorCategoria = movimentacoes
       .filter(m => m.tipo === 'saida' && m.categoria?.nivel === 'secundaria')
-      .reduce((acc, m) => {
+      .reduce((acc: Record<string, CategoriaTotal>, m) => {
         if (!m.categoria_id || !m.categoria) return acc;
         
         const categoriaId = m.categoria_id;
@@ -29,9 +34,8 @@ const GraficoMovimentacoes: React.FC<GraficoMovimentacoesProps> = ({ movimentaco
         }
         acc[categoriaId].total += Number(m.valor);
         return acc;
-      }, {} as Record<string, { categoria: string; total: number; nome: string }>);
+      }, {});
 
-    // Converter para array e ordenar por valor total decrescente
     return Object.values(saidasPorCategoria)
       .sort((a, b) => b.total - a.total)
       .map(item => ({

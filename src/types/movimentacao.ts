@@ -7,6 +7,7 @@ export interface Categoria {
   nome: string;
   nivel: string;
   tipo: string;
+  categoria_pai_id?: string;
 }
 
 export interface Movimentacao {
@@ -18,7 +19,7 @@ export interface Movimentacao {
   conta: ContaTipo;
   created_by?: string;
   is_approved?: boolean;
-  categoria_id?: string | null;
+  categoria_id?: string;
   categoria?: Categoria | null;
   created_at: string;
   updated_at: string;

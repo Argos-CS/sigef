@@ -3,6 +3,9 @@ import { useMovimentacoesState } from './useMovimentacoesState';
 import { useMovimentacoesQueries } from './useMovimentacoesQueries';
 import { useMovimentacoesMutations } from './useMovimentacoesMutations';
 import { useAuth } from '@/contexts/AuthContext';
+import { Movimentacao, MovimentacaoTipo, ContaTipo } from '@/types/movimentacao';
+
+export type { Movimentacao, MovimentacaoTipo, ContaTipo };
 
 export const useMovimentacoes = () => {
   const { user } = useAuth();
