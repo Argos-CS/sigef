@@ -4,29 +4,23 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface PeriodDisplayProps {
-  timeRange: string;
   dateRange: {
     from: Date | undefined;
     to: Date | undefined;
   };
 }
 
-export const PeriodDisplay = ({ timeRange, dateRange }: PeriodDisplayProps) => {
+export const PeriodDisplay = ({ dateRange }: PeriodDisplayProps) => {
   const formatDate = (date: Date) => {
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
 
   const getPeriodoFormatado = () => {
     try {
-      if (timeRange === 'custom' && dateRange.from && dateRange.to) {
+      if (dateRange.from && dateRange.to) {
         return `${formatDate(dateRange.from)} até ${formatDate(dateRange.to)}`;
       }
-
-      const hoje = new Date();
-      const inicio = new Date();
-      inicio.setDate(hoje.getDate() - Number(timeRange));
-      
-      return `${formatDate(inicio)} até ${formatDate(hoje)}`;
+      return 'Período não definido';
     } catch (error) {
       console.error('Erro ao formatar período:', error);
       return 'Período não definido';
@@ -34,7 +28,7 @@ export const PeriodDisplay = ({ timeRange, dateRange }: PeriodDisplayProps) => {
   };
 
   return (
-    <div className="p-4 rounded-xl">
+    <div className="h-full flex flex-col justify-center">
       <div className="flex items-center gap-2">
         <Calendar className="h-5 w-5 text-primary" />
         <div>

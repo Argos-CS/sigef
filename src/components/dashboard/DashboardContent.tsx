@@ -24,8 +24,6 @@ interface DashboardContentProps {
     from: Date | undefined;
     to: Date | undefined;
   };
-  timeRange: string;
-  setTimeRange: (value: string) => void;
   setDateRange: React.Dispatch<React.SetStateAction<{
     from: Date | undefined;
     to: Date | undefined;
@@ -38,8 +36,6 @@ export const DashboardContent = ({
   saldosPorConta, 
   dadosUltimos12Meses,
   dateRange,
-  timeRange,
-  setTimeRange,
   setDateRange,
   onReset
 }: DashboardContentProps) => {
@@ -47,8 +43,6 @@ export const DashboardContent = ({
     <div className="space-y-6">
       {/* Unified Filters Section */}
       <UnifiedFiltersSection
-        timeRange={timeRange}
-        setTimeRange={setTimeRange}
         dateRange={dateRange}
         setDateRange={setDateRange}
         onReset={onReset}
@@ -57,20 +51,20 @@ export const DashboardContent = ({
 
       {/* Distribution Charts - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="glass-card p-6 h-full">
+        <div className="glass-card rounded-xl border border-border/40 p-6">
           <div className="glass-content">
             <SaldoPorContaPie saldos={saldosPorConta.final} />
           </div>
         </div>
-        <div className="glass-card p-6 h-full">
+        <div className="glass-card rounded-xl border border-border/40 p-6">
           <div className="glass-content">
             <ExpenseAnalysisChart filteredData={filteredData} />
           </div>
         </div>
       </div>
 
-      {/* Movimentação Mensal (últimos 12 meses) */}
-      <div className="glass-card p-6">
+      {/* Movimentação Mensal */}
+      <div className="glass-card rounded-xl border border-border/40 p-6">
         <div className="glass-content">
           <TrendChart
             data={dadosUltimos12Meses}
