@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
-
-export type ContaTipo = 'Dinheiro' | 'Bradesco' | 'Cora';
-export type MovimentacaoTipo = 'entrada' | 'saida';
+import { Movimentacao, MovimentacaoTipo, ContaTipo } from '@/types/movimentacao';
 
 export interface Categoria {
   id: string;
@@ -12,19 +10,6 @@ export interface Categoria {
   codigo: string;
   nivel: string;
   tipo: string;
-}
-
-export interface Movimentacao {
-  id: string;
-  data: string;
-  tipo: MovimentacaoTipo;
-  descricao: string;
-  valor: string;
-  conta: ContaTipo;
-  created_by?: string;
-  is_approved?: boolean;
-  categoria_id?: string | null;
-  categoria?: Categoria | null;
 }
 
 export const useMovimentacoes = () => {
@@ -54,7 +39,9 @@ export const useMovimentacoes = () => {
       const typedData = data?.map(item => ({
         ...item,
         tipo: item.tipo as MovimentacaoTipo,
-        valor: item.valor.toString()
+        valor: item.valor.toString(),
+        created_at: item.created_at || new Date().toISOString(),
+        updated_at: item.updated_at || new Date().toISOString()
       })) || [];
 
       console.log('Movimentações carregadas:', typedData);
@@ -69,7 +56,7 @@ export const useMovimentacoes = () => {
     }
   };
 
-  const addMovimentacao = async (movimentacao: Omit<Movimentacao, 'id' | 'created_by' | 'is_approved'>) => {
+  const addMovimentacao = async (movimentacao: Omit<Movimentacao, 'id' | 'created_by' | 'is_approved' | 'created_at' | 'updated_at'>) => {
     if (!user) {
       toast({
         title: "Erro ao registrar movimentação",
@@ -86,7 +73,7 @@ export const useMovimentacoes = () => {
         created_by: user.id,
         is_approved: false,
         valor: parseFloat(movimentacao.valor),
-        categoria_id: movimentacao.categoria_id || null // Garante que categoria_id seja null se não fornecido
+        categoria_id: movimentacao.categoria_id || null
       };
 
       const { data, error } = await supabase
@@ -100,10 +87,12 @@ export const useMovimentacoes = () => {
         throw error;
       }
 
-      const typedData = {
+      const typedData: Movimentacao = {
         ...data,
         tipo: data.tipo as MovimentacaoTipo,
-        valor: data.valor.toString()
+        valor: data.valor.toString(),
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
       };
 
       console.log('Movimentação registrada com sucesso:', typedData);

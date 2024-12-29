@@ -34,7 +34,7 @@ export function MovimentacoesActions() {
       const movimentacoesImportadas = await importarDoExcel(file);
       
       for (const mov of movimentacoesImportadas) {
-        const { id, created_at, updated_at, is_approved, ...movimentacaoData } = mov;
+        const { id, created_at, updated_at, is_approved, created_by, ...movimentacaoData } = mov;
         await addMovimentacao(movimentacaoData);
       }
 
