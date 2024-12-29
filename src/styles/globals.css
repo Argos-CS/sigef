@@ -71,4 +71,4 @@
 .select-item[data-highlighted] {
   background-color: hsl(var(--accent)) !important;
   color: hsl(var(--accent-foreground)) !important;
-} 
+}
