@@ -81,4 +81,4 @@ export async function importarDoExcel(file: File): Promise<Movimentacao[]> {
   });
 
   return movimentacoes;
-} 
+}

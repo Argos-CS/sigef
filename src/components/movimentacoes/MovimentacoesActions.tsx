@@ -6,7 +6,7 @@ import { useMovimentacoes } from "@/hooks/useMovimentacoes";
 
 export function MovimentacoesActions() {
   const { toast } = useToast();
-  const { movimentacoes, adicionarMovimentacoes } = useMovimentacoes();
+  const { movimentacoes, addMovimentacao } = useMovimentacoes();
 
   const handleExport = async () => {
     try {
@@ -31,7 +31,11 @@ export function MovimentacoesActions() {
       if (!file) return;
 
       const movimentacoesImportadas = await importarDoExcel(file);
-      adicionarMovimentacoes(movimentacoesImportadas);
+      
+      // Adicionar cada movimentação individualmente
+      for (const mov of movimentacoesImportadas) {
+        await addMovimentacao(mov);
+      }
 
       toast({
         title: "Importação concluída",
@@ -80,4 +84,4 @@ export function MovimentacoesActions() {
       </div>
     </div>
   );
-} 
+}

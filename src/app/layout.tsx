@@ -1,3 +1,6 @@
+import { cn } from "@/lib/utils"
+import { fontSans } from "@/lib/fonts"
+
 export default function RootLayout({
   children,
 }: {
@@ -13,4 +16,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+}

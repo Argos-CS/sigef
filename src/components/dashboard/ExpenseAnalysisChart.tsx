@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Movimentacao } from '@/hooks/useMovimentacoes';
 import { ExpenseBarChart } from './charts/ExpenseBarChart';
 import { EXPENSE_CHART_COLORS, processExpenseData } from './charts/expenseChartUtils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectViewport } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ExpenseAnalysisChartProps {
   filteredData: Movimentacao[];
