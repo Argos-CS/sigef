@@ -20,7 +20,7 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
 
   if (data.length === 0) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center">
+      <div className="w-full h-[400px] flex items-center justify-center rounded-xl border border-border/40">
         <p className="text-muted-foreground">Nenhum saldo disponível</p>
       </div>
     );
@@ -42,7 +42,7 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
   );
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="w-full flex flex-col rounded-xl border border-border/40 p-6">
       <h3 className="text-lg font-semibold mb-4">Saldo Atual por Conta</h3>
       <div className="flex items-center min-h-[220px]">
         {/* Legenda à esquerda */}
@@ -101,4 +101,4 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
       </div>
     </div>
   );
-} 
+}
