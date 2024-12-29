@@ -3,6 +3,7 @@ import { Download, Upload } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { exportarParaExcel, importarDoExcel } from "@/utils/excel";
 import { useMovimentacoes } from "@/hooks/useMovimentacoes";
+import { Movimentacao } from "@/types/movimentacao";
 
 export function MovimentacoesActions() {
   const { toast } = useToast();
@@ -34,7 +35,8 @@ export function MovimentacoesActions() {
       
       // Adicionar cada movimentação individualmente
       for (const mov of movimentacoesImportadas) {
-        await addMovimentacao(mov);
+        const { id, created_at, updated_at, is_approved, ...movimentacaoData } = mov;
+        await addMovimentacao(movimentacaoData);
       }
 
       toast({
