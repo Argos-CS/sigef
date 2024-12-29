@@ -5,7 +5,6 @@ import { DashboardContent } from '@/components/dashboard/DashboardContent';
 
 const Dashboard = () => {
   const { movimentacoes } = useMovimentacoes();
-  const [timeRange, setTimeRange] = useState('30');
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -15,7 +14,6 @@ const Dashboard = () => {
   });
 
   const resetFilters = () => {
-    setTimeRange('30');
     setDateRange({ from: undefined, to: undefined });
   };
 
@@ -24,12 +22,14 @@ const Dashboard = () => {
       const hoje = new Date();
       let dataInicial = new Date();
 
-      if (timeRange === 'custom' && dateRange.from && dateRange.to) {
+      if (dateRange.from && dateRange.to) {
         dataInicial = new Date(dateRange.from);
         hoje.setTime(new Date(dateRange.to).getTime());
         hoje.setHours(23, 59, 59, 999);
       } else {
-        dataInicial.setDate(hoje.getDate() - Number(timeRange));
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(hoje.getDate() - 30);
+        dataInicial = thirtyDaysAgo;
         dataInicial.setHours(0, 0, 0, 0);
       }
 
@@ -41,7 +41,7 @@ const Dashboard = () => {
       console.error('Erro ao filtrar dados:', error);
       return [];
     }
-  }, [movimentacoes, timeRange, dateRange]);
+  }, [movimentacoes, dateRange]);
 
   const {
     saldosPorConta,
@@ -52,13 +52,13 @@ const Dashboard = () => {
       let dataInicial: Date;
       let dataFinal: Date;
 
-      if (timeRange === 'custom' && dateRange.from && dateRange.to) {
+      if (dateRange.from && dateRange.to) {
         dataInicial = new Date(dateRange.from);
         dataFinal = new Date(dateRange.to);
       } else {
         dataFinal = hoje;
         dataInicial = new Date(hoje);
-        dataInicial.setDate(dataFinal.getDate() - Number(timeRange));
+        dataInicial.setDate(dataFinal.getDate() - 30);
       }
 
       dataInicial.setHours(0, 0, 0, 0);
@@ -171,7 +171,7 @@ const Dashboard = () => {
         dadosUltimos12Meses: []
       };
     }
-  }, [movimentacoes, timeRange, dateRange]);
+  }, [movimentacoes, dateRange]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,8 +183,6 @@ const Dashboard = () => {
           saldosPorConta={saldosPorConta}
           dadosUltimos12Meses={dadosUltimos12Meses}
           dateRange={dateRange}
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
           setDateRange={setDateRange}
           onReset={resetFilters}
         />
