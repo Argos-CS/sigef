@@ -12,7 +12,7 @@ export async function exportarParaExcel(movimentacoes: Movimentacao[], nomeArqui
     { header: 'Descrição', key: 'descricao', width: 30 },
     { header: 'Valor', key: 'valor', width: 15 },
     { header: 'Conta', key: 'conta', width: 15 },
-    { header: 'Categoria', key: 'categoria', width: 15 }
+    { header: 'Categoria', key: 'categoria_id', width: 15 }
   ];
 
   // Estilo para o cabeçalho
@@ -31,7 +31,7 @@ export async function exportarParaExcel(movimentacoes: Movimentacao[], nomeArqui
       descricao: mov.descricao,
       valor: mov.valor,
       conta: mov.conta,
-      categoria: mov.categoria
+      categoria_id: mov.categoria_id
     });
   });
 
@@ -69,12 +69,15 @@ export async function importarDoExcel(file: File): Promise<Movimentacao[]> {
 
     const movimentacao: Movimentacao = {
       id: crypto.randomUUID(),
-      data: row.getCell(1).value as Date,
-      tipo: (row.getCell(2).value as string).toLowerCase() as 'entrada' | 'saida',
-      descricao: row.getCell(3).value as string,
-      valor: Number(row.getCell(4).value),
-      conta: row.getCell(5).value as string,
-      categoria: row.getCell(6).value as string
+      data: row.getCell(1).value?.toString() || new Date().toISOString(),
+      tipo: (row.getCell(2).value?.toString().toLowerCase() || 'entrada') as 'entrada' | 'saida',
+      descricao: row.getCell(3).value?.toString() || '',
+      valor: Number(row.getCell(4).value) || 0,
+      conta: row.getCell(5).value?.toString() || '',
+      categoria_id: row.getCell(6).value?.toString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_approved: false
     };
 
     movimentacoes.push(movimentacao);

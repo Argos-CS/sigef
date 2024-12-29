@@ -1,6 +1,4 @@
-import { Inter as FontSans } from "next/font/google"
-
-export const fontSans = FontSans({
-  subsets: ["latin"],
+// Removendo a dependência do next/font/google pois estamos usando Vite
+export const fontSans = {
   variable: "--font-sans",
-})
+}
