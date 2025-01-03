@@ -41,20 +41,25 @@ export const DashboardContent = ({
   setDateRange,
   onReset
 }: DashboardContentProps) => {
-  // Verificar se os dados estão vazios ou indefinidos
-  const hasNoData = !filteredData?.length || 
-    !Object.keys(saldosPorConta?.final || {}).length || 
-    !dadosUltimos12Meses?.length;
-
-  // Log para debug
-  console.log('Dashboard data:', {
-    filteredData: filteredData?.length,
-    saldosPorConta: Object.keys(saldosPorConta?.final || {}).length,
-    dadosUltimos12Meses: dadosUltimos12Meses?.length,
-    hasNoData
+  console.log('DashboardContent render:', {
+    filteredDataLength: filteredData?.length,
+    hasSaldos: !!saldosPorConta,
+    hasDadosMensais: !!dadosUltimos12Meses,
+    dateRange: {
+      from: dateRange.from?.toISOString(),
+      to: dateRange.to?.toISOString()
+    }
   });
 
+  // Simplified check for data availability
+  const hasNoData = !filteredData || !saldosPorConta || !dadosUltimos12Meses;
+
   if (hasNoData) {
+    console.log('No data available:', {
+      filteredData: !!filteredData,
+      saldosPorConta: !!saldosPorConta,
+      dadosUltimos12Meses: !!dadosUltimos12Meses
+    });
     return (
       <div className="space-y-6">
         <Alert variant="destructive">
@@ -69,7 +74,6 @@ export const DashboardContent = ({
 
   return (
     <div className="space-y-6">
-      {/* Unified Filters Section */}
       <UnifiedFiltersSection
         dateRange={dateRange}
         setDateRange={setDateRange}
@@ -77,7 +81,6 @@ export const DashboardContent = ({
         saldosPorConta={saldosPorConta}
       />
 
-      {/* Distribution Charts - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="glass-card rounded-xl border border-border/40 p-6">
           <div className="glass-content">
@@ -91,7 +94,6 @@ export const DashboardContent = ({
         </div>
       </div>
 
-      {/* Movimentação Mensal */}
       <div className="glass-card rounded-xl border border-border/40 p-6">
         <div className="glass-content">
           <TrendChart
