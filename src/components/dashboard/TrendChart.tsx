@@ -100,7 +100,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
   return (
     <Card className="glass-card">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Evolução Gráfica</CardTitle>
+        <CardTitle>Movimento Gráfico</CardTitle>
         <Select value={selectedPeriod} onValueChange={(value: PeriodOption) => setSelectedPeriod(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Selecione o período" />
