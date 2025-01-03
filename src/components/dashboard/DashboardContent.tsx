@@ -51,7 +51,6 @@ export const DashboardContent = ({
     }
   });
 
-  // Simplified check for data availability
   const hasNoData = !filteredData || !saldosPorConta || !dadosUltimos12Meses;
 
   if (hasNoData) {
@@ -89,7 +88,10 @@ export const DashboardContent = ({
         </div>
         <div className="glass-card rounded-xl border border-border/40 p-6">
           <div className="glass-content">
-            <ExpenseAnalysisChart filteredData={filteredData} />
+            <ExpenseAnalysisChart 
+              filteredData={filteredData} 
+              dateRange={dateRange}
+            />
           </div>
         </div>
       </div>
@@ -98,7 +100,7 @@ export const DashboardContent = ({
         <div className="glass-content">
           <TrendChart
             data={dadosUltimos12Meses}
-            title="Movimentação Mensal (Últimos 12 Meses)"
+            title="Evolução Gráfica"
           />
         </div>
       </div>
