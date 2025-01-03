@@ -6,6 +6,8 @@ import { startOfMonth } from 'date-fns';
 import { useDashboardCalculations } from '@/hooks/useDashboardCalculations';
 
 const Dashboard = () => {
+  console.log('Dashboard component rendering');
+  
   const { movimentacoes } = useMovimentacoes();
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -13,15 +15,32 @@ const Dashboard = () => {
   }>(() => {
     const today = new Date();
     const firstDayOfMonth = startOfMonth(today);
+    console.log('Initializing date range:', {
+      firstDayOfMonth: firstDayOfMonth.toISOString(),
+      today: today.toISOString()
+    });
     return {
       from: firstDayOfMonth,
       to: today
     };
   });
 
+  console.log('Current state:', {
+    hasMovimentacoes: !!movimentacoes,
+    movimentacoesLength: movimentacoes?.length,
+    dateRange: {
+      from: dateRange.from?.toISOString(),
+      to: dateRange.to?.toISOString()
+    }
+  });
+
   const resetFilters = () => {
     const today = new Date();
     const firstDayOfMonth = startOfMonth(today);
+    console.log('Resetting filters:', {
+      firstDayOfMonth: firstDayOfMonth.toISOString(),
+      today: today.toISOString()
+    });
     setDateRange({ from: firstDayOfMonth, to: today });
   };
 
@@ -31,7 +50,7 @@ const Dashboard = () => {
     dadosUltimos12Meses
   } = useDashboardCalculations(movimentacoes, dateRange);
 
-  console.log('Dashboard render:', {
+  console.log('Dashboard calculations result:', {
     totalMovimentacoes: movimentacoes?.length,
     filteredDataLength: filteredData?.length,
     hasBalances: !!saldosPorConta?.final,
