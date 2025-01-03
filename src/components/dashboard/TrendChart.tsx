@@ -56,7 +56,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title, titleClassName }) 
 
       if (selectedPeriod === 'trimestral') {
         const trimestre = Math.ceil(parseInt(mes) / 3);
-        period = `${ano}-T${trimestre}`;
+        period = `${ano}-${trimestre}T`;
       } else if (selectedPeriod === 'anual') {
         period = ano;
       }
