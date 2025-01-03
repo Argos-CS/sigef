@@ -46,7 +46,7 @@ export const ExpenseAnalysisChart = ({ filteredData, dateRange }: ExpenseAnalysi
   return (
     <div className="h-full">
       <div className="flex flex-col gap-2 mb-4">
-        <h3 className="text-lg font-semibold">Fluxo de Caixa {getPeriodText()}</h3>
+        <h3 className="text-lg font-semibold">Fluxo de Despesas {getPeriodText()}</h3>
       </div>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
