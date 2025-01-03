@@ -45,7 +45,7 @@ export const ExpenseAnalysisChart = ({ filteredData, dateRange }: ExpenseAnalysi
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Fluxo de Despesas {getPeriodText()}</CardTitle>
+        <CardTitle className="text-[1.2rem]">Fluxo de Despesas {getPeriodText()}</CardTitle>
       </CardHeader>
       <CardContent>
         <ExpenseBarChart 

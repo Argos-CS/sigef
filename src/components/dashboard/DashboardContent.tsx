@@ -83,6 +83,7 @@ export const DashboardContent = ({
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="glass-card rounded-xl border border-border/40 p-6">
           <div className="glass-content">
+            <h3 className="text-[1.2rem] font-semibold mb-4">Saldo Atual</h3>
             <SaldoPorContaPie saldos={saldosPorConta.final} />
           </div>
         </div>
@@ -101,6 +102,7 @@ export const DashboardContent = ({
           <TrendChart
             data={dadosUltimos12Meses}
             title="Evolução Gráfica"
+            titleClassName="text-[1.2rem]"
           />
         </div>
       </div>

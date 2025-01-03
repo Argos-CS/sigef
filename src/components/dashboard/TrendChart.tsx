@@ -20,12 +20,11 @@ interface TrendChartProps {
     saidas: number;
   }>;
   title: string;
+  titleClassName?: string;
 }
 
-type PeriodOption = 'mensal' | 'trimestral' | 'anual';
-
-const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('mensal');
+const TrendChart: React.FC<TrendChartProps> = ({ data, title, titleClassName }) => {
+  const [selectedPeriod, setSelectedPeriod] = useState<'mensal' | 'trimestral' | 'anual'>('mensal');
   const containerRef = useRef<HTMLDivElement>(null);
   const [key, setKey] = useState(0);
 
@@ -100,8 +99,8 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
   return (
     <Card className="glass-card">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Movimento Gráfico</CardTitle>
-        <Select value={selectedPeriod} onValueChange={(value: PeriodOption) => setSelectedPeriod(value)}>
+        <CardTitle className={titleClassName || "text-[1.2rem]"}>{title}</CardTitle>
+        <Select value={selectedPeriod} onValueChange={(value: 'mensal' | 'trimestral' | 'anual') => setSelectedPeriod(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Selecione o período" />
           </SelectTrigger>
@@ -112,7 +111,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title }) => {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent>
         <div ref={containerRef} className="h-[300px]" key={key}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart 
