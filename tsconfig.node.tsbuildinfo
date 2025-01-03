@@ -1,8 +1,14 @@
 {
   "program": {
-    "fileNames": ["./vite.config.ts"],
+    "fileNames": [
+      "./vite.config.ts"
+    ],
     "fileInfos": {
-      "./vite.config.ts": "0"
+      "./vite.config.ts": {
+        "version": "0",
+        "signature": "0",
+        "affectsGlobalScope": false
+      }
     },
     "options": {
       "composite": true,
