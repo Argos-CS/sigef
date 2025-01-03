@@ -44,9 +44,9 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
   );
 
   return (
-    <div className="glass-card p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Saldo Atual</h3>
+    <div>
+      <h3 className="text-[1.2rem] font-semibold mb-4">Saldo Atual</h3>
+      <div className="flex justify-end mb-4">
         <div className={`text-lg font-semibold ${totalBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
           Total: {formatarMoeda(totalBalance)}
         </div>
