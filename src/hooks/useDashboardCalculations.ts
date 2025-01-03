@@ -1,122 +1,117 @@
-import { useMemo } from 'react';
 import { Movimentacao } from '@/types/movimentacao';
-import { startOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
+interface DashboardCalculationsResult {
+  filteredData: Movimentacao[];
+  saldosPorConta: {
+    inicial: Record<string, number>;
+    final: Record<string, number>;
+    movimentacoes: {
+      entradas: Record<string, number>;
+      saidas: Record<string, number>;
+    };
+  };
+  dadosUltimos12Meses: Array<{
+    name: string;
+    entradas: number;
+    saidas: number;
+  }>;
 }
 
-export const useDashboardCalculations = (movimentacoes: Movimentacao[], dateRange: DateRange) => {
-  const filteredData = useMemo(() => {
-    console.log('useDashboardCalculations - Initial data:', {
-      totalMovimentacoes: movimentacoes?.length,
-      dateRange,
-      hasMovimentacoes: !!movimentacoes,
-      isArray: Array.isArray(movimentacoes)
-    });
+export const useDashboardCalculations = (
+  movimentacoes: Movimentacao[] | undefined,
+  dateRange: {
+    from: Date | undefined;
+    to: Date | undefined;
+  }
+): DashboardCalculationsResult => {
+  // Filter data based on date range
+  const filteredData = movimentacoes?.filter(mov => {
+    if (!dateRange.from || !dateRange.to || !mov.data) return false;
+    const movDate = new Date(mov.data);
+    return isWithinInterval(movDate, { start: dateRange.from, end: dateRange.to });
+  }) || [];
 
-    if (!movimentacoes?.length) {
-      console.log('No movimentações found');
-      return [];
+  // Initialize saldosPorConta with all accounts from movimentacoes
+  const result = {
+    inicial: {} as Record<string, number>,
+    final: {} as Record<string, number>,
+    movimentacoes: {
+      entradas: {} as Record<string, number>,
+      saidas: {} as Record<string, number>
     }
+  };
 
-    try {
-      const dataFinal = dateRange.to ? new Date(dateRange.to) : new Date();
-      let dataInicial = dateRange.from ? new Date(dateRange.from) : startOfMonth(dataFinal);
+  // Get unique accounts
+  const contas = [...new Set(movimentacoes?.map(m => m.conta) || [])];
 
-      dataInicial.setHours(0, 0, 0, 0);
-      dataFinal.setHours(23, 59, 59, 999);
+  // Initialize accounts with zero
+  contas.forEach(conta => {
+    result.inicial[conta] = 0;
+    result.final[conta] = 0;
+    result.movimentacoes.entradas[conta] = 0;
+    result.movimentacoes.saidas[conta] = 0;
+  });
 
-      console.log('Filtering movimentações:', {
-        dataInicial: dataInicial.toISOString(),
-        dataFinal: dataFinal.toISOString(),
-        totalMovimentacoes: movimentacoes.length
-      });
-
-      const filtered = movimentacoes.filter(m => {
-        const movData = new Date(m.data);
-        const isInRange = movData >= dataInicial && movData <= dataFinal;
-        if (!isInRange) {
-          console.log('Filtered out movimentação:', {
-            data: m.data,
-            movData: movData.toISOString(),
-            isBeforeStart: movData < dataInicial,
-            isAfterEnd: movData > dataFinal
-          });
-        }
-        return isInRange;
-      });
-
-      console.log('Filtering complete:', {
-        totalFiltered: filtered.length,
-        firstItem: filtered[0],
-        lastItem: filtered[filtered.length - 1]
-      });
-
-      return filtered;
-    } catch (error) {
-      console.error('Error filtering data:', error);
-      return [];
-    }
-  }, [movimentacoes, dateRange]);
-
-  // Calculate saldosPorConta
-  const saldosPorConta = useMemo(() => {
-    const result = {
-      inicial: {} as Record<string, number>,
-      final: {} as Record<string, number>,
-      movimentacoes: {
-        entradas: {} as Record<string, number>,
-        saidas: {} as Record<string, number>
-      }
-    };
-
-    // Initialize with 0 for each conta
-    const contas = [...new Set(movimentacoes.map(m => m.conta))];
-    contas.forEach(conta => {
-      result.inicial[conta] = 0;
-      result.final[conta] = 0;
-      result.movimentacoes.entradas[conta] = 0;
-      result.movimentacoes.saidas[conta] = 0;
-    });
-
-    // Calculate movimentações
-    filteredData.forEach(mov => {
-      const valorNumerico = Number(mov.valor); // Convert string to number
+  // Calculate initial balances (saldo inicial)
+  movimentacoes?.forEach(mov => {
+    if (!dateRange.from || !mov.data) return;
+    const movDate = new Date(mov.data);
+    if (movDate < dateRange.from) {
       if (mov.tipo === 'entrada') {
-        result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + valorNumerico;
+        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) + mov.valor;
       } else {
-        result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + valorNumerico;
+        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) - mov.valor;
       }
-    });
+    }
+  });
 
-    // Calculate final balances
-    contas.forEach(conta => {
-      result.final[conta] = (result.inicial[conta] || 0) +
-        (result.movimentacoes.entradas[conta] || 0) -
-        (result.movimentacoes.saidas[conta] || 0);
-    });
+  // Calculate movimentações
+  filteredData.forEach(mov => {
+    if (mov.tipo === 'entrada') {
+      result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + mov.valor;
+    } else {
+      result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + mov.valor;
+    }
+  });
 
-    // Calculate totals
-    result.inicial.total = Object.values(result.inicial).reduce((sum, val) => sum + val, 0);
-    result.final.total = Object.values(result.final).reduce((sum, val) => sum + val, 0);
-    result.movimentacoes.entradas.total = Object.values(result.movimentacoes.entradas).reduce((sum, val) => sum + val, 0);
-    result.movimentacoes.saidas.total = Object.values(result.movimentacoes.saidas).reduce((sum, val) => sum + val, 0);
+  // Calculate final balances
+  contas.forEach(conta => {
+    result.final[conta] = result.inicial[conta] +
+      (result.movimentacoes.entradas[conta] || 0) -
+      (result.movimentacoes.saidas[conta] || 0);
+  });
 
-    return result;
-  }, [filteredData, movimentacoes]);
+  // Calculate totals
+  result.inicial.total = Object.values(result.inicial).reduce((acc, val) => acc + val, 0);
+  result.final.total = Object.values(result.final).reduce((acc, val) => acc + val, 0);
+  result.movimentacoes.entradas.total = Object.values(result.movimentacoes.entradas).reduce((acc, val) => acc + val, 0);
+  result.movimentacoes.saidas.total = Object.values(result.movimentacoes.saidas).reduce((acc, val) => acc + val, 0);
 
-  // Calculate dados últimos 12 meses
-  const dadosUltimos12Meses = useMemo(() => {
-    const months: Array<{ name: string; entradas: number; saidas: number }> = [];
-    // Monthly data calculation logic here
-    return months;
-  }, [movimentacoes]);
+  // Calculate monthly data
+  const dadosUltimos12Meses = movimentacoes
+    ?.reduce((acc, mov) => {
+      const monthYear = format(new Date(mov.data), 'yyyy-MM');
+      if (!acc[monthYear]) {
+        acc[monthYear] = { entradas: 0, saidas: 0 };
+      }
+      if (mov.tipo === 'entrada') {
+        acc[monthYear].entradas += mov.valor;
+      } else {
+        acc[monthYear].saidas += mov.valor;
+      }
+      return acc;
+    }, {} as Record<string, { entradas: number; saidas: number }>);
+
+  const monthlyData = Object.entries(dadosUltimos12Meses || {}).map(([monthYear, values]) => ({
+    name: monthYear,
+    ...values
+  }));
 
   return {
     filteredData,
-    saldosPorConta,
-    dadosUltimos12Meses
+    saldosPorConta: result,
+    dadosUltimos12Meses: monthlyData
   };
 };
