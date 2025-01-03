@@ -5,33 +5,31 @@ import { DashboardContent } from '@/components/dashboard/DashboardContent';
 
 const Dashboard = () => {
   const { movimentacoes } = useMovimentacoes();
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined
-  });
+
+  // Configurar as datas padrão
+  const getDefaultDateRange = () => {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    return {
+      from: firstDayOfMonth,
+      to: today
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getDefaultDateRange());
 
   const resetFilters = () => {
-    setDateRange({ from: undefined, to: undefined });
+    setDateRange(getDefaultDateRange());
   };
 
   const filteredData = useMemo(() => {
     try {
-      const hoje = new Date();
-      let dataInicial = new Date();
+      const hoje = dateRange.to || new Date();
+      let dataInicial = dateRange.from || new Date();
 
-      if (dateRange.from && dateRange.to) {
-        dataInicial = new Date(dateRange.from);
-        hoje.setTime(new Date(dateRange.to).getTime());
-        hoje.setHours(23, 59, 59, 999);
-      } else {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(hoje.getDate() - 30);
-        dataInicial = thirtyDaysAgo;
-        dataInicial.setHours(0, 0, 0, 0);
-      }
+      dataInicial.setHours(0, 0, 0, 0);
+      hoje.setHours(23, 59, 59, 999);
 
       return movimentacoes.filter(m => {
         const movData = new Date(m.data);
@@ -48,21 +46,11 @@ const Dashboard = () => {
     dadosUltimos12Meses
   } = useMemo(() => {
     try {
-      const hoje = new Date();
-      let dataInicial: Date;
-      let dataFinal: Date;
-
-      if (dateRange.from && dateRange.to) {
-        dataInicial = new Date(dateRange.from);
-        dataFinal = new Date(dateRange.to);
-      } else {
-        dataFinal = hoje;
-        dataInicial = new Date(hoje);
-        dataInicial.setDate(dataFinal.getDate() - 30);
-      }
+      const hoje = dateRange.to || new Date();
+      let dataInicial = dateRange.from || new Date();
 
       dataInicial.setHours(0, 0, 0, 0);
-      dataFinal.setHours(23, 59, 59, 999);
+      hoje.setHours(23, 59, 59, 999);
 
       const saldosIniciais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
@@ -75,7 +63,7 @@ const Dashboard = () => {
 
       const saldosFinais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
-        if (movData <= dataFinal) {
+        if (movData <= hoje) {
           if (!acc[m.conta]) acc[m.conta] = 0;
           acc[m.conta] += m.tipo === 'entrada' ? Number(m.valor) : -Number(m.valor);
         }
@@ -97,7 +85,7 @@ const Dashboard = () => {
 
       const movimentacoesPeriodo = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
-        if (movData >= dataInicial && movData <= dataFinal) {
+        if (movData >= dataInicial && movData <= hoje) {
           if (!acc.entradas[m.conta]) acc.entradas[m.conta] = 0;
           if (!acc.saidas[m.conta]) acc.saidas[m.conta] = 0;
           
