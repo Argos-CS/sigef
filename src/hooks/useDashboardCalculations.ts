@@ -83,10 +83,11 @@ export const useDashboardCalculations = (movimentacoes: Movimentacao[], dateRang
 
     // Calculate movimentações
     filteredData.forEach(mov => {
+      const valorNumerico = Number(mov.valor); // Convert string to number
       if (mov.tipo === 'entrada') {
-        result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + mov.valor;
+        result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + valorNumerico;
       } else {
-        result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + mov.valor;
+        result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + valorNumerico;
       }
     });
 
