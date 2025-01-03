@@ -100,7 +100,7 @@ export const DashboardContent = ({
         <div className="glass-content">
           <TrendChart
             data={dadosUltimos12Meses}
-            title="Evolução Gráfica"
+            title="Movimentação Gráfica"
             titleClassName="text-[1.2rem]"
           />
         </div>
