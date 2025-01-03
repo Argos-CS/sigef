@@ -58,21 +58,24 @@ export const useDashboardCalculations = (
   movimentacoes?.forEach(mov => {
     if (!dateRange.from || !mov.data) return;
     const movDate = new Date(mov.data);
+    const valorNumerico = Number(mov.valor);
+    
     if (movDate < dateRange.from) {
       if (mov.tipo === 'entrada') {
-        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) + mov.valor;
+        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) + valorNumerico;
       } else {
-        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) - mov.valor;
+        result.inicial[mov.conta] = (result.inicial[mov.conta] || 0) - valorNumerico;
       }
     }
   });
 
   // Calculate movimentações
   filteredData.forEach(mov => {
+    const valorNumerico = Number(mov.valor);
     if (mov.tipo === 'entrada') {
-      result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + mov.valor;
+      result.movimentacoes.entradas[mov.conta] = (result.movimentacoes.entradas[mov.conta] || 0) + valorNumerico;
     } else {
-      result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + mov.valor;
+      result.movimentacoes.saidas[mov.conta] = (result.movimentacoes.saidas[mov.conta] || 0) + valorNumerico;
     }
   });
 
@@ -96,10 +99,11 @@ export const useDashboardCalculations = (
       if (!acc[monthYear]) {
         acc[monthYear] = { entradas: 0, saidas: 0 };
       }
+      const valorNumerico = Number(mov.valor);
       if (mov.tipo === 'entrada') {
-        acc[monthYear].entradas += mov.valor;
+        acc[monthYear].entradas += valorNumerico;
       } else {
-        acc[monthYear].saidas += mov.valor;
+        acc[monthYear].saidas += valorNumerico;
       }
       return acc;
     }, {} as Record<string, { entradas: number; saidas: number }>);
