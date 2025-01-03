@@ -2,38 +2,53 @@ import React, { useState, useMemo } from 'react';
 import { useMovimentacoes } from '@/hooks/useMovimentacoes';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
+import { startOfMonth } from 'date-fns';
 
 const Dashboard = () => {
   const { movimentacoes } = useMovimentacoes();
-
-  // Configurar as datas padrão
-  const getDefaultDateRange = () => {
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>(() => {
+    // Define data inicial como primeiro dia do mês corrente
     const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const firstDayOfMonth = startOfMonth(today);
     
     return {
       from: firstDayOfMonth,
       to: today
     };
-  };
-
-  const [dateRange, setDateRange] = useState(getDefaultDateRange());
+  });
 
   const resetFilters = () => {
-    setDateRange(getDefaultDateRange());
+    const today = new Date();
+    const firstDayOfMonth = startOfMonth(today);
+    setDateRange({ from: firstDayOfMonth, to: today });
   };
 
   const filteredData = useMemo(() => {
     try {
-      const hoje = dateRange.to || new Date();
-      let dataInicial = dateRange.from || new Date();
+      if (!movimentacoes || movimentacoes.length === 0) {
+        console.log('Nenhuma movimentação encontrada');
+        return [];
+      }
 
+      const dataFinal = dateRange.to ? new Date(dateRange.to) : new Date();
+      let dataInicial = dateRange.from ? new Date(dateRange.from) : startOfMonth(dataFinal);
+
+      // Ajusta as horas para comparação precisa
       dataInicial.setHours(0, 0, 0, 0);
-      hoje.setHours(23, 59, 59, 999);
+      dataFinal.setHours(23, 59, 59, 999);
+
+      console.log('Filtrando movimentações:', {
+        dataInicial: dataInicial.toISOString(),
+        dataFinal: dataFinal.toISOString(),
+        totalMovimentacoes: movimentacoes.length
+      });
 
       return movimentacoes.filter(m => {
         const movData = new Date(m.data);
-        return movData >= dataInicial && movData <= hoje;
+        return movData >= dataInicial && movData <= dataFinal;
       });
     } catch (error) {
       console.error('Erro ao filtrar dados:', error);
@@ -46,11 +61,16 @@ const Dashboard = () => {
     dadosUltimos12Meses
   } = useMemo(() => {
     try {
-      const hoje = dateRange.to || new Date();
-      let dataInicial = dateRange.from || new Date();
+      const dataFinal = dateRange.to ? new Date(dateRange.to) : new Date();
+      let dataInicial = dateRange.from ? new Date(dateRange.from) : startOfMonth(dataFinal);
 
       dataInicial.setHours(0, 0, 0, 0);
-      hoje.setHours(23, 59, 59, 999);
+      dataFinal.setHours(23, 59, 59, 999);
+
+      console.log('Calculando saldos:', {
+        dataInicial: dataInicial.toISOString(),
+        dataFinal: dataFinal.toISOString()
+      });
 
       const saldosIniciais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
@@ -63,7 +83,7 @@ const Dashboard = () => {
 
       const saldosFinais = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
-        if (movData <= hoje) {
+        if (movData <= dataFinal) {
           if (!acc[m.conta]) acc[m.conta] = 0;
           acc[m.conta] += m.tipo === 'entrada' ? Number(m.valor) : -Number(m.valor);
         }
@@ -85,7 +105,7 @@ const Dashboard = () => {
 
       const movimentacoesPeriodo = movimentacoes.reduce((acc, m) => {
         const movData = new Date(m.data);
-        if (movData >= dataInicial && movData <= hoje) {
+        if (movData >= dataInicial && movData <= dataFinal) {
           if (!acc.entradas[m.conta]) acc.entradas[m.conta] = 0;
           if (!acc.saidas[m.conta]) acc.saidas[m.conta] = 0;
           
@@ -109,10 +129,16 @@ const Dashboard = () => {
         movimentacoes: movimentacoesPeriodo
       };
 
-      const inicioUltimos12Meses = new Date(hoje);
-      inicioUltimos12Meses.setMonth(hoje.getMonth() - 11);
+      // Cálculo dos dados dos últimos 12 meses
+      const inicioUltimos12Meses = new Date(dataFinal);
+      inicioUltimos12Meses.setMonth(dataFinal.getMonth() - 11);
       inicioUltimos12Meses.setDate(1);
       inicioUltimos12Meses.setHours(0, 0, 0, 0);
+
+      console.log('Calculando dados dos últimos 12 meses:', {
+        inicioUltimos12Meses: inicioUltimos12Meses.toISOString(),
+        dataFinal: dataFinal.toISOString()
+      });
 
       const dadosPorPeriodo12Meses = movimentacoes
         .filter(m => new Date(m.data) >= inicioUltimos12Meses)
@@ -134,8 +160,8 @@ const Dashboard = () => {
         }, {} as Record<string, { entradas: number; saidas: number }>);
 
       const dadosUltimos12Meses = Array.from({ length: 12 }, (_, i) => {
-        const data = new Date(hoje);
-        data.setMonth(hoje.getMonth() - (11 - i));
+        const data = new Date(dataFinal);
+        data.setMonth(dataFinal.getMonth() - (11 - i));
         const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
         return {
           name: chave,
