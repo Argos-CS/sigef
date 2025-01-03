@@ -4,6 +4,8 @@ import { UnifiedFiltersSection } from './UnifiedFiltersSection';
 import { SaldoPorContaPie } from './SaldoPorContaPie';
 import { ExpenseAnalysisChart } from './ExpenseAnalysisChart';
 import TrendChart from './TrendChart';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface DashboardContentProps {
   filteredData: Movimentacao[];
@@ -39,6 +41,32 @@ export const DashboardContent = ({
   setDateRange,
   onReset
 }: DashboardContentProps) => {
+  // Verificar se os dados estão vazios ou indefinidos
+  const hasNoData = !filteredData?.length || 
+    !Object.keys(saldosPorConta?.final || {}).length || 
+    !dadosUltimos12Meses?.length;
+
+  // Log para debug
+  console.log('Dashboard data:', {
+    filteredData: filteredData?.length,
+    saldosPorConta: Object.keys(saldosPorConta?.final || {}).length,
+    dadosUltimos12Meses: dadosUltimos12Meses?.length,
+    hasNoData
+  });
+
+  if (hasNoData) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Não foi possível carregar os dados do dashboard. Por favor, atualize a página ou tente novamente mais tarde.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Unified Filters Section */}
