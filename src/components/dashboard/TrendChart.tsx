@@ -97,7 +97,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, title, titleClassName }) 
   }, [selectedPeriod]);
 
   return (
-    <Card className="glass-card">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className={titleClassName || "text-[1.2rem]"}>{title}</CardTitle>
         <Select value={selectedPeriod} onValueChange={(value: 'mensal' | 'trimestral' | 'anual') => setSelectedPeriod(value)}>

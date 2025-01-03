@@ -1,4 +1,5 @@
 import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { LegendItem } from './pie-chart/LegendItem';
 import { PieChartSection } from './pie-chart/PieChartSection';
 import { TotalBalance } from './pie-chart/TotalBalance';
@@ -30,27 +31,29 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
   }
 
   return (
-    <div>
-      <h3 className="text-[1.2rem] font-semibold mb-4">Saldo Atual</h3>
-      <TotalBalance totalBalance={totalBalance} />
-      <div className="flex items-center min-h-[220px]">
-        {/* Legenda à esquerda */}
-        <div className="w-1/3 flex flex-col justify-center space-y-2 pr-8">
-          {data.map((entry, index) => (
-            <LegendItem
-              key={entry.name}
-              name={entry.name}
-              value={entry.valorReal}
-              color={COLORS[index % COLORS.length]}
-            />
-          ))}
-        </div>
+    <Card>
+      <CardContent className="pt-6">
+        <h3 className="text-[1.2rem] font-semibold mb-4">Saldo Atual</h3>
+        <TotalBalance totalBalance={totalBalance} />
+        <div className="flex items-center min-h-[220px]">
+          {/* Legenda à esquerda */}
+          <div className="w-1/3 flex flex-col justify-center space-y-2 pr-8">
+            {data.map((entry, index) => (
+              <LegendItem
+                key={entry.name}
+                name={entry.name}
+                value={entry.valorReal}
+                color={COLORS[index % COLORS.length]}
+              />
+            ))}
+          </div>
 
-        {/* Gráfico à direita */}
-        <div className="w-2/3 flex items-center">
-          <PieChartSection data={data} colors={COLORS} />
+          {/* Gráfico à direita */}
+          <div className="w-2/3 flex items-center">
+            <PieChartSection data={data} colors={COLORS} />
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
