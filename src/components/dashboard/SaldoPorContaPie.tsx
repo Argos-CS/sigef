@@ -11,12 +11,14 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
   const data = Object.entries(saldos)
     .filter(([conta]) => conta !== 'total' && saldos[conta] !== 0)
+    .sort((a, b) => a[0].localeCompare(b[0])) // Sort alphabetically by account name
     .map(([conta, valor]) => ({
       name: conta,
       value: Math.abs(valor),
       valorReal: valor
-    }))
-    .sort((a, b) => b.value - a.value);
+    }));
+
+  const totalBalance = saldos.total || 0;
 
   if (data.length === 0) {
     return (
@@ -43,7 +45,12 @@ export function SaldoPorContaPie({ saldos }: SaldoPorContaPieProps) {
 
   return (
     <div className="glass-card p-6">
-      <h3 className="text-lg font-semibold mb-4">Saldo Atual por Conta</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Saldo Atual</h3>
+        <div className={`text-lg font-semibold ${totalBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          Total: {formatarMoeda(totalBalance)}
+        </div>
+      </div>
       <div className="flex items-center min-h-[220px]">
         {/* Legenda à esquerda */}
         <div className="w-1/3 flex flex-col justify-center space-y-2 pr-8">
