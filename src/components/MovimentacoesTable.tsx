@@ -25,6 +25,9 @@ interface Categoria {
   id: string;
   codigo: string;
   nome: string;
+  nivel: string;
+  tipo: string;
+  categoria_pai_id?: string;
 }
 
 const MovimentacoesTable: React.FC<MovimentacoesTableProps> = ({ 
@@ -35,24 +38,36 @@ const MovimentacoesTable: React.FC<MovimentacoesTableProps> = ({
   const { user, canManageFinances } = useAuth();
   const [selectedMovimentacao, setSelectedMovimentacao] = useState<string | null>(null);
   const [categorias, setCategorias] = useState<Record<string, Categoria>>({});
+  const [categoriasSecundarias, setCategoriasSecundarias] = useState<Categoria[]>([]);
 
   useEffect(() => {
     const fetchCategorias = async () => {
-      const { data, error } = await supabase
+      console.log('Fetching categorias...');
+      const { data: allCategorias, error } = await supabase
         .from('categorias_plano_contas')
-        .select('id, codigo, nome');
+        .select('*')
+        .order('codigo');
       
       if (error) {
         console.error('Erro ao carregar categorias:', error);
         return;
       }
-      
-      const categoriasMap = data.reduce((acc, cat) => ({
+
+      // Create a map of all categories for quick lookup
+      const categoriasMap = allCategorias.reduce((acc, cat) => ({
         ...acc,
         [cat.id]: cat
       }), {});
+
+      // Filter secondary categories
+      const secundarias = allCategorias.filter(cat => 
+        cat.nivel === 'secundaria'
+      );
+
+      console.log('Categorias secundárias carregadas:', secundarias);
       
       setCategorias(categoriasMap);
+      setCategoriasSecundarias(secundarias);
     };
 
     fetchCategorias();
@@ -77,7 +92,8 @@ const MovimentacoesTable: React.FC<MovimentacoesTableProps> = ({
 
   const formatarCategoria = (categoriaId: string) => {
     const categoria = categorias[categoriaId];
-    return categoria ? categoria.nome : '';
+    if (!categoria) return 'Sem categoria';
+    return `${categoria.codigo} - ${categoria.nome}`;
   };
 
   const formatarValorComCor = (valor: string, tipo: string) => {

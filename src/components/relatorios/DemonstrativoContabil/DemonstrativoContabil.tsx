@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,8 @@ import 'jspdf-autotable';
 import { useToast } from '@/components/ui/use-toast';
 import { ContaTipo, Movimentacao } from '@/types/movimentacao';
 import { formatarMoeda } from '@/utils/formatters';
+import { supabase } from '@/lib/supabase';
 
-// Add type augmentation for jsPDF
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -26,9 +26,38 @@ interface DemonstrativoContabilProps {
   movimentacoes: Movimentacao[];
 }
 
+interface Categoria {
+  id: string;
+  codigo: string;
+  nome: string;
+  nivel: string;
+  tipo: string;
+}
+
 export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ movimentacoes }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [categoriasSecundarias, setCategoriasSecundarias] = useState<Categoria[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      const { data, error } = await supabase
+        .from('categorias_plano_contas')
+        .select('*')
+        .eq('nivel', 'secundaria')
+        .eq('tipo', 'saida')
+        .order('codigo');
+      
+      if (error) {
+        console.error('Erro ao carregar categorias:', error);
+        return;
+      }
+      
+      setCategoriasSecundarias(data);
+    };
+
+    fetchCategorias();
+  }, []);
 
   const months = useMemo(() => {
     const uniqueMonths = new Set(
@@ -44,6 +73,11 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
 
     const contas: ContaTipo[] = ['Bradesco', 'Cora', 'Dinheiro'];
     const categoriasSaida: Record<string, number> = {};
+
+    // Initialize all secondary categories with 0
+    categoriasSecundarias.forEach(cat => {
+      categoriasSaida[`${cat.codigo} - ${cat.nome}`] = 0;
+    });
 
     const movimentacoesFiltradas = movimentacoes.filter(m => {
       const data = new Date(m.data);
@@ -61,7 +95,6 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
         .filter(m => m.tipo === 'saida')
         .reduce((sum, m) => sum + Number(m.valor), 0);
 
-      // Calcular saldo inicial baseado em movimentações anteriores
       const movimentacoesAnteriores = movimentacoes.filter(m => {
         const data = new Date(m.data);
         return data < startDate && m.conta === conta;
@@ -80,16 +113,19 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       };
     });
 
-    // Calcular totais por categoria para saídas
+    // Calculate totals by category for expenses
     movimentacoesFiltradas
       .filter(m => m.tipo === 'saida')
       .forEach(m => {
-        const categoria = m.categoria?.nome || 'Sem Categoria';
-        categoriasSaida[categoria] = (categoriasSaida[categoria] || 0) + Number(m.valor);
+        const categoria = categoriasSecundarias.find(c => c.id === m.categoria_id);
+        if (categoria) {
+          const categoriaKey = `${categoria.codigo} - ${categoria.nome}`;
+          categoriasSaida[categoriaKey] = (categoriasSaida[categoriaKey] || 0) + Number(m.valor);
+        }
       });
 
     return { demonstrativo, categoriasSaida };
-  }, [movimentacoes, selectedMonth]);
+  }, [movimentacoes, selectedMonth, categoriasSecundarias]);
 
   const exportToPDF = () => {
     try {
@@ -98,7 +134,7 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       
       doc.text(`Demonstrativo Contábil - ${monthYear}`, 14, 15);
       
-      // Tabela principal
+      // Main table
       const tableData = demonstrativoData.demonstrativo.map(row => [
         row.conta,
         formatarMoeda(row.saldoInicial),
@@ -113,14 +149,16 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
         startY: 25,
       });
 
-      // Tabela de categorias
+      // Categories table
       const startY = doc.lastAutoTable.finalY + 15;
       doc.text('Detalhamento de Saídas por Categoria', 14, startY);
       
-      const categoriasData = Object.entries(demonstrativoData.categoriasSaida).map(([categoria, valor]) => [
-        categoria,
-        formatarMoeda(valor),
-      ]);
+      const categoriasData = Object.entries(demonstrativoData.categoriasSaida)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([categoria, valor]) => [
+          categoria,
+          formatarMoeda(valor),
+        ]);
 
       doc.autoTable({
         head: [['Categoria', 'Valor']],
