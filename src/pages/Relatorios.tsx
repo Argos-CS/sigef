@@ -2,12 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useMovimentacoes, Movimentacao, ContaTipo } from '@/hooks/useMovimentacoes';
 import MovimentacoesTable from '@/components/MovimentacoesTable';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatarMoeda } from '@/utils/formatters';
 import ResumoFinanceiro from '@/components/relatorios/ResumoFinanceiro';
 import FiltrosRelatorios from '@/components/relatorios/FiltrosRelatorios';
 import GraficosRelatorios from '@/components/relatorios/GraficosRelatorios';
+import { DemonstrativoContabil } from '@/components/relatorios/DemonstrativoContabil/DemonstrativoContabil';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Relatorios = () => {
@@ -25,56 +25,11 @@ const Relatorios = () => {
   });
 
   const movimentacoesFiltradas = useMemo(() => {
-    if (!filtros.ativo) return movimentacoes;
-
-    return movimentacoes
-      .filter(m => filtros.dataInicio ? new Date(m.data) >= new Date(filtros.dataInicio) : true)
-      .filter(m => filtros.dataFim ? new Date(m.data) <= new Date(filtros.dataFim) : true)
-      .filter(m => filtros.mes ? new Date(m.data).getMonth() + 1 === parseInt(filtros.mes) : true)
-      .filter(m => filtros.ano ? new Date(m.data).getFullYear() === parseInt(filtros.ano) : true)
-      .filter(m => filtros.tipo !== 'todos' ? m.tipo === filtros.tipo : true)
-      .filter(m => filtros.conta !== 'todas' ? m.conta === filtros.conta : true)
-      .filter(m => filtros.descricao ? m.descricao.toLowerCase().includes(filtros.descricao.toLowerCase()) : true)
-      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    // ... keep existing code (filtering logic)
   }, [movimentacoes, filtros]);
 
   const dashboardData = useMemo(() => {
-    const totalPorConta = {
-      Dinheiro: { entradas: 0, saidas: 0 },
-      Bradesco: { entradas: 0, saidas: 0 },
-      Cora: { entradas: 0, saidas: 0 },
-    };
-
-    movimentacoesFiltradas.forEach(m => {
-      if (m.tipo === 'entrada') {
-        totalPorConta[m.conta].entradas += Number(m.valor);
-      } else {
-        totalPorConta[m.conta].saidas += Number(m.valor);
-      }
-    });
-
-    const totalEntradas = Object.values(totalPorConta).reduce((sum, { entradas }) => sum + entradas, 0);
-    const totalSaidas = Object.values(totalPorConta).reduce((sum, { saidas }) => sum + saidas, 0);
-    const saldo = totalEntradas - totalSaidas;
-
-    const movimentacoesPorMes = movimentacoesFiltradas.reduce((acc, m) => {
-      const date = new Date(m.data);
-      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      if (!acc[monthYear]) {
-        acc[monthYear] = { Dinheiro: 0, Bradesco: 0, Cora: 0 };
-      }
-      acc[monthYear][m.conta] += Number(m.valor) * (m.tipo === 'entrada' ? 1 : -1);
-      return acc;
-    }, {} as Record<string, Record<ContaTipo, number>>);
-
-    const chartData = Object.entries(movimentacoesPorMes).map(([monthYear, data]) => ({
-      name: monthYear,
-      Dinheiro: data.Dinheiro,
-      Bradesco: data.Bradesco,
-      Cora: data.Cora,
-    }));
-
-    return { totalPorConta, totalEntradas, totalSaidas, saldo, chartData };
+    // ... keep existing code (dashboard data calculations)
   }, [movimentacoesFiltradas]);
 
   if (!user) {
@@ -85,13 +40,18 @@ const Relatorios = () => {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Relatórios</h1>
       
-      <Tabs defaultValue="resumo">
+      <Tabs defaultValue="demonstrativo">
         <TabsList>
+          <TabsTrigger value="demonstrativo">Demonstrativo Contábil</TabsTrigger>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="graficos">Gráficos</TabsTrigger>
           <TabsTrigger value="todas">Todas as Movimentações</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="demonstrativo">
+          <DemonstrativoContabil movimentacoes={movimentacoes} />
+        </TabsContent>
+
         <TabsContent value="resumo">
           <ResumoFinanceiro dashboardData={dashboardData} />
         </TabsContent>
@@ -128,26 +88,6 @@ const Relatorios = () => {
               <p className={`text-2xl font-bold ${dashboardData.saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {formatarMoeda(dashboardData.saldo)}
               </p>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Movimentações por Mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dashboardData.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => formatarMoeda(Number(value))} />
-                  <Legend />
-                  <Bar dataKey="Dinheiro" fill="#4ade80" name="Dinheiro" />
-                  <Bar dataKey="Bradesco" fill="#f87171" name="Bradesco" />
-                  <Bar dataKey="Cora" fill="#60a5fa" name="Cora" />
-                </BarChart>
-              </ResponsiveContainer>
             </CardContent>
           </Card>
 
