@@ -9,8 +9,15 @@ import {
 } from "@/components/ui/table";
 import { formatarMoeda } from '@/utils/formatters';
 
-interface BalanceteData {
+export interface BalanceteData {
   conta: string;
+  saldoInicial: number;
+  entradas: number;
+  saidas: number;
+  saldoFinal: number;
+}
+
+export interface Totals {
   saldoInicial: number;
   entradas: number;
   saidas: number;
@@ -19,21 +26,10 @@ interface BalanceteData {
 
 interface BalanceteTableProps {
   data: BalanceteData[];
+  totals: Totals;
 }
 
-export const BalanceteTable: React.FC<BalanceteTableProps> = ({ data }) => {
-  const totals = data.reduce((acc, curr) => ({
-    saldoInicial: acc.saldoInicial + curr.saldoInicial,
-    entradas: acc.entradas + curr.entradas,
-    saidas: acc.saidas + curr.saidas,
-    saldoFinal: acc.saldoFinal + curr.saldoFinal,
-  }), {
-    saldoInicial: 0,
-    entradas: 0,
-    saidas: 0,
-    saldoFinal: 0,
-  });
-
+export const BalanceteTable: React.FC<BalanceteTableProps> = ({ data, totals }) => {
   return (
     <div className="rounded-lg border bg-card">
       <Table>
