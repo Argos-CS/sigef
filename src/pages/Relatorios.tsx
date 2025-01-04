@@ -25,12 +25,91 @@ const Relatorios = () => {
   });
 
   const movimentacoesFiltradas = useMemo(() => {
-    // ... keep existing code (filtering logic)
+    if (!movimentacoes) return [];
+    
+    let filtered = [...movimentacoes];
+    
+    if (filtros.ativo) {
+      // Apply filters only if they are active
+      if (filtros.dataInicio) {
+        filtered = filtered.filter(m => m.data >= filtros.dataInicio);
+      }
+      if (filtros.dataFim) {
+        filtered = filtered.filter(m => m.data <= filtros.dataFim);
+      }
+      if (filtros.tipo !== 'todos') {
+        filtered = filtered.filter(m => m.tipo === filtros.tipo);
+      }
+      if (filtros.conta !== 'todas') {
+        filtered = filtered.filter(m => m.conta === filtros.conta);
+      }
+      if (filtros.descricao) {
+        filtered = filtered.filter(m => 
+          m.descricao.toLowerCase().includes(filtros.descricao.toLowerCase())
+        );
+      }
+    }
+    
+    return filtered;
   }, [movimentacoes, filtros]);
 
   const dashboardData = useMemo(() => {
-    // ... keep existing code (dashboard data calculations)
+    const totalPorConta: Record<string, { entradas: number; saidas: number }> = {};
+    let totalEntradas = 0;
+    let totalSaidas = 0;
+
+    movimentacoesFiltradas.forEach(mov => {
+      if (!totalPorConta[mov.conta]) {
+        totalPorConta[mov.conta] = { entradas: 0, saidas: 0 };
+      }
+      
+      const valor = Number(mov.valor);
+      if (mov.tipo === 'entrada') {
+        totalPorConta[mov.conta].entradas += valor;
+        totalEntradas += valor;
+      } else {
+        totalPorConta[mov.conta].saidas += valor;
+        totalSaidas += valor;
+      }
+    });
+
+    return {
+      totalPorConta,
+      totalEntradas,
+      totalSaidas,
+      saldo: totalEntradas - totalSaidas
+    };
   }, [movimentacoesFiltradas]);
+
+  const chartData = useMemo(() => {
+    const monthlyData: Record<string, Record<string, number>> = {};
+    
+    movimentacoesFiltradas.forEach(mov => {
+      const monthYear = mov.data.substring(0, 7); // Get YYYY-MM
+      if (!monthlyData[monthYear]) {
+        monthlyData[monthYear] = {
+          Dinheiro: 0,
+          Bradesco: 0,
+          Cora: 0
+        };
+      }
+      
+      const valor = Number(mov.valor);
+      if (mov.tipo === 'entrada') {
+        monthlyData[monthYear][mov.conta] += valor;
+      } else {
+        monthlyData[monthYear][mov.conta] -= valor;
+      }
+    });
+
+    return {
+      chartData: Object.entries(monthlyData).map(([name, values]) => ({
+        name,
+        ...values
+      })),
+      totalPorConta: dashboardData.totalPorConta
+    };
+  }, [movimentacoesFiltradas, dashboardData.totalPorConta]);
 
   if (!user) {
     return <div>Carregando...</div>;
@@ -49,7 +128,7 @@ const Relatorios = () => {
         </TabsList>
         
         <TabsContent value="demonstrativo">
-          <DemonstrativoContabil movimentacoes={movimentacoes} />
+          <DemonstrativoContabil movimentacoes={movimentacoesFiltradas} />
         </TabsContent>
 
         <TabsContent value="resumo">
@@ -57,7 +136,7 @@ const Relatorios = () => {
         </TabsContent>
         
         <TabsContent value="graficos">
-          <GraficosRelatorios dashboardData={dashboardData} />
+          <GraficosRelatorios dashboardData={chartData} />
         </TabsContent>
 
         <TabsContent value="todas">

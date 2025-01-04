@@ -10,6 +10,14 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { useToast } from '@/components/ui/use-toast';
 import { ContaTipo, Movimentacao } from '@/types/movimentacao';
+import { formatarMoeda } from '@/utils/formatters';
+
+// Add type augmentation for jsPDF
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 interface DemonstrativoContabilProps {
   movimentacoes: Movimentacao[];
