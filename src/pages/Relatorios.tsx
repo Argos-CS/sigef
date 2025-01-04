@@ -82,7 +82,7 @@ const Relatorios = () => {
   }, [movimentacoesFiltradas]);
 
   const chartData = useMemo(() => {
-    const monthlyData: Record<string, Record<string, number>> = {};
+    const monthlyData: Record<string, Record<ContaTipo, number>> = {};
     
     movimentacoesFiltradas.forEach(mov => {
       const monthYear = mov.data.substring(0, 7); // Get YYYY-MM
@@ -105,7 +105,9 @@ const Relatorios = () => {
     return {
       chartData: Object.entries(monthlyData).map(([name, values]) => ({
         name,
-        ...values
+        Dinheiro: values.Dinheiro,
+        Bradesco: values.Bradesco,
+        Cora: values.Cora
       })),
       totalPorConta: dashboardData.totalPorConta
     };

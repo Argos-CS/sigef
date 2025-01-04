@@ -16,6 +16,9 @@ import { formatarMoeda } from '@/utils/formatters';
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    };
   }
 }
 
@@ -111,7 +114,8 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       });
 
       // Tabela de categorias
-      doc.text('Detalhamento de Saídas por Categoria', 14, doc.autoTable.previous.finalY + 15);
+      const startY = doc.lastAutoTable.finalY + 15;
+      doc.text('Detalhamento de Saídas por Categoria', 14, startY);
       
       const categoriasData = Object.entries(demonstrativoData.categoriasSaida).map(([categoria, valor]) => [
         categoria,
@@ -121,7 +125,7 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       doc.autoTable({
         head: [['Categoria', 'Valor']],
         body: categoriasData,
-        startY: doc.autoTable.previous.finalY + 20,
+        startY: startY + 5,
       });
 
       doc.save(`demonstrativo-contabil-${selectedMonth}.pdf`);
