@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { format, parseISO, isWithinInterval } from 'https://esm.sh/date-fns@2.30.0';
-import { ptBR } from 'https://esm.sh/date-fns/locale@2.30.0';
+import { ptBR } from 'https://esm.sh/date-fns@2.30.0/locale';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

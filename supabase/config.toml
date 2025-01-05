@@ -16,9 +16,4 @@ port = 54323
 api_url = "http://localhost"
 
 [[functions]]
-name = "powerbi-auth"
-verify_jwt = false
-
-[[functions]]
-name = "powerbi-data"
 verify_jwt = false
