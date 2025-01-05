@@ -8,12 +8,14 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { query } = await req.json();
+    console.log('Received query:', query);
     
     // Criar cliente Supabase
     const supabaseClient = createClient(
@@ -25,26 +27,35 @@ serve(async (req) => {
     const { data: movimentacoes, error: movError } = await supabaseClient
       .from('movimentacoes')
       .select('*')
-      .order('data', { ascending: false });
+      .order('data', { ascending: false })
+      .limit(100);
 
-    if (movError) throw movError;
+    if (movError) {
+      console.error('Error fetching movimentacoes:', movError);
+      throw movError;
+    }
+
+    console.log('Retrieved movimentacoes count:', movimentacoes?.length);
 
     // Preparar contexto para o GPT
     const financialContext = {
-      totalMovimentacoes: movimentacoes.length,
-      movimentacoesRecentes: movimentacoes.slice(0, 5),
-      resumoFinanceiro: movimentacoes.reduce((acc, mov) => {
+      totalMovimentacoes: movimentacoes?.length,
+      movimentacoesRecentes: movimentacoes?.slice(0, 5),
+      resumoFinanceiro: movimentacoes?.reduce((acc, mov) => {
+        const valor = Number(mov.valor);
         if (mov.tipo === 'entrada') {
-          acc.totalEntradas += Number(mov.valor);
+          acc.totalEntradas += valor;
         } else {
-          acc.totalSaidas += Number(mov.valor);
+          acc.totalSaidas += valor;
         }
         return acc;
       }, { totalEntradas: 0, totalSaidas: 0 })
     };
 
+    console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
+
     // Fazer requisição para o GPT
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
@@ -60,7 +71,8 @@ serve(async (req) => {
                      ${JSON.stringify(financialContext, null, 2)}
                      
                      Responda de forma clara e profissional, usando os dados disponíveis para fundamentar suas análises.
-                     Se necessário, faça cálculos e apresente métricas relevantes.`
+                     Se necessário, faça cálculos e apresente métricas relevantes.
+                     Responda sempre em português do Brasil.`
           },
           {
             role: 'user',
@@ -70,7 +82,15 @@ serve(async (req) => {
       }),
     });
 
-    const gptResponse = await response.json();
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const gptResponse = await openaiResponse.json();
+    console.log('Received GPT response:', gptResponse);
+
     const answer = gptResponse.choices[0].message.content;
 
     return new Response(
@@ -79,9 +99,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in financial-assistant function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: 'Erro ao processar pergunta: ' + error.message,
+        details: error.stack
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

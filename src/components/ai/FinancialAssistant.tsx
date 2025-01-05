@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
+import { Loader2 } from "lucide-react";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -25,19 +26,30 @@ export const FinancialAssistant = () => {
       setIsLoading(true);
       setMessages(prev => [...prev, { role: 'user', content: input }]);
       
+      console.log('Sending query to financial-assistant:', input);
+      
       const { data, error } = await supabase.functions.invoke('financial-assistant', {
         body: { query: input }
       });
 
-      if (error) throw error;
+      console.log('Response from financial-assistant:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data?.answer) {
+        throw new Error('Resposta inválida do assistente');
+      }
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
       setInput('');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in handleSubmit:', error);
       toast({
         title: "Erro ao processar pergunta",
-        description: "Não foi possível obter uma resposta do assistente.",
+        description: error.message || "Não foi possível obter uma resposta do assistente.",
         variant: "destructive",
       });
     } finally {
@@ -82,7 +94,14 @@ export const FinancialAssistant = () => {
             disabled={isLoading}
           />
           <Button type="submit" disabled={isLoading || !input.trim()}>
-            Enviar
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              'Enviar'
+            )}
           </Button>
         </form>
       </CardContent>
