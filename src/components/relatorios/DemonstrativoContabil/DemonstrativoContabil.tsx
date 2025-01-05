@@ -62,16 +62,16 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
 
     const categoriasSaida: Record<string, number> = {};
     categoriasSecundarias.forEach(cat => {
-      categoriasSaida[`${cat.codigo} - ${cat.nome}`] = 0;
+      categoriasSaida[cat.nome] = 0;
     });
 
     const demonstrativo = [
-      { conta: '1.1 Bradesco', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 },
-      { conta: '1.2 Cora', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 },
-      { conta: '1.3 Dinheiro', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 }
+      { conta: 'Bradesco', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 },
+      { conta: 'Cora', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 },
+      { conta: 'Dinheiro', saldoInicial: 0, entradas: 0, saidas: 0, saldoFinal: 0 }
     ].map(conta => {
       const movimentacoesConta = movimentacoesFiltradas.filter(
-        m => m.conta === conta.conta.split(' ')[1]
+        m => m.conta === conta.conta
       );
       
       const entradas = movimentacoesConta
@@ -84,7 +84,7 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
 
       const movimentacoesAnteriores = movimentacoes.filter(m => {
         const data = new Date(m.data);
-        return data < startDate && m.conta === conta.conta.split(' ')[1];
+        return data < startDate && m.conta === conta.conta;
       });
 
       const saldoInicial = movimentacoesAnteriores.reduce((sum, m) => {
@@ -105,8 +105,7 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       .forEach(m => {
         const categoria = categoriasSecundarias.find(c => c.id === m.categoria_id);
         if (categoria) {
-          const categoriaKey = `${categoria.codigo} - ${categoria.nome}`;
-          categoriasSaida[categoriaKey] = (categoriasSaida[categoriaKey] || 0) + Number(m.valor);
+          categoriasSaida[categoria.nome] = (categoriasSaida[categoria.nome] || 0) + Number(m.valor);
         }
       });
 
@@ -194,7 +193,7 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-4">3. Detalhamento de Saídas</h2>
+            <h2 className="text-xl font-semibold mb-4">3. Detalhamento dos Registros Financeiros</h2>
             <DetalhamentoSaidasTable 
               movimentacoes={demonstrativoData.movimentacoesFiltradas}
               categoriasSecundarias={categoriasSecundarias}

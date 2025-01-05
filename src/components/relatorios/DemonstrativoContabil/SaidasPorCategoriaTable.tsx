@@ -30,10 +30,14 @@ export const SaidasPorCategoriaTable: React.FC<SaidasPorCategoriaTableProps> = (
         </TableHeader>
         <TableBody>
           {Object.entries(categoriasSaida)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([categoria, valor]) => (
-              <TableRow key={categoria}>
-                <TableCell>{categoria}</TableCell>
+            .map(([categoria, valor]) => {
+              const categoriaName = categoria.split(' - ')[1]; // Get only the name part
+              return { name: categoriaName, valor };
+            })
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(({ name, valor }) => (
+              <TableRow key={name}>
+                <TableCell>{name}</TableCell>
                 <TableCell className="text-right text-red-600">
                   {formatarMoeda(valor)}
                 </TableCell>
