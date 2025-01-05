@@ -32,21 +32,19 @@ serve(async (req) => {
     const contextoFinanceiro = prepararContextoFinanceiro(movimentacoes);
     console.log('Prepared financial context:', JSON.stringify(contextoFinanceiro, null, 2));
 
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (!anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY não configurada');
+    const grokApiKey = Deno.env.get('GROK_API_KEY');
+    if (!grokApiKey) {
+      throw new Error('GROK_API_KEY não configurada');
     }
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('https://api.grok.x/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'x-api-key': anthropicApiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
+          'Authorization': `Bearer ${grokApiKey}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-3-sonnet-20240229',
           messages: [
             {
               role: 'system',
@@ -83,30 +81,25 @@ serve(async (req) => {
               content: query
             }
           ],
+          temperature: 0.7,
           max_tokens: 1000,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Anthropic API error:', errorData);
-        
-        // Check for credit balance error
-        if (errorData.error?.message?.includes('credit balance is too low')) {
-          throw new Error('Créditos da API Anthropic esgotados. Por favor, atualize seu plano ou adicione mais créditos.');
-        }
-        
-        throw new Error(`Erro na API Anthropic: ${errorData.error?.message || 'Erro desconhecido'}`);
+        console.error('Grok API error:', errorData);
+        throw new Error(`Erro na API Grok: ${errorData.error?.message || 'Erro desconhecido'}`);
       }
 
       const result = await response.json();
       return new Response(
-        JSON.stringify({ answer: result.content[0].text }),
+        JSON.stringify({ answer: result.choices[0].message.content }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } catch (error) {
-      console.error('Error in Anthropic API call:', error);
+      console.error('Error in Grok API call:', error);
       throw error;
     }
 

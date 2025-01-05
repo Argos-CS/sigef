@@ -41,10 +41,6 @@ export const FinancialAssistant = () => {
       }
 
       if (data?.error) {
-        // Check for credit balance error
-        if (data.error.includes('créditos da API Anthropic esgotados')) {
-          throw new Error('O assistente está temporariamente indisponível devido a limitações de crédito. Por favor, tente novamente mais tarde.');
-        }
         throw new Error(data.error);
       }
 
@@ -74,7 +70,7 @@ export const FinancialAssistant = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Assistente Financeiro (Claude)</CardTitle>
+        <CardTitle>Assistente Financeiro (Grok)</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4 mb-4">
