@@ -78,20 +78,17 @@ export const exportToPDF = ({
     });
 
     // 2. Saídas por Categoria
-    const startY = doc.lastAutoTable.finalY + 15;
+    const startY = (doc.lastAutoTable?.finalY || 50) + 15;
     doc.setFontSize(12);
     doc.text('2. Saídas por Categoria:', 15, startY);
     
     const categoriasData = Object.entries(categoriasSaida)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([categoria, valor]) => {
-        const categoriaName = categoria.split(' - ')[1]; // Get only the name part
-        return [
-          categoriaName,
-          formatarMoeda(valor),
-          `${((valor / totals.saidas) * 100).toFixed(2)}%`,
-        ];
-      });
+      .map(([categoria, valor]) => [
+        categoria,
+        formatarMoeda(valor),
+        `${((valor / totals.saidas) * 100).toFixed(2)}%`,
+      ]);
 
     doc.autoTable({
       startY: startY + 5,
@@ -103,7 +100,7 @@ export const exportToPDF = ({
     });
 
     // 3. Detalhamento dos Registros Financeiros
-    const detailStartY = doc.lastAutoTable.finalY + 15;
+    const detailStartY = (doc.lastAutoTable?.finalY || startY) + 15;
     doc.setFontSize(12);
     doc.text('3. Detalhamento dos Registros Financeiros:', 15, detailStartY);
 
@@ -139,7 +136,7 @@ export const exportToPDF = ({
     });
 
     // 4. Assinaturas
-    const signatureStartY = doc.lastAutoTable.finalY + 30;
+    const signatureStartY = (doc.lastAutoTable?.finalY || detailStartY) + 30;
     doc.setFontSize(12);
     doc.text('4. Conferido e assinado por:', 15, signatureStartY);
 
