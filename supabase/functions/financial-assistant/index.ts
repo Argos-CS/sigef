@@ -37,7 +37,7 @@ serve(async (req) => {
 
     console.log('Retrieved movimentacoes count:', movimentacoes?.length);
 
-    // Preparar contexto para o GPT
+    // Preparar contexto para a IA
     const financialContext = {
       totalMovimentacoes: movimentacoes?.length,
       movimentacoesRecentes: movimentacoes?.slice(0, 5),
@@ -54,15 +54,15 @@ serve(async (req) => {
 
     console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
 
-    // Fazer requisição para o GPT
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Fazer requisição para a Perplexity
+    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: [
           {
             role: 'system',
@@ -79,32 +79,19 @@ serve(async (req) => {
             content: query
           }
         ],
+        temperature: 0.2,
+        max_tokens: 1000
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.json();
-      console.error('OpenAI API error:', errorData);
-      
-      // Check for quota exceeded error
-      if (errorData.error?.message?.includes('exceeded your current quota')) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Limite de uso da API excedido. Por favor, entre em contato com o administrador do sistema.',
-            type: 'QUOTA_EXCEEDED'
-          }),
-          { 
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (!perplexityResponse.ok) {
+      const errorData = await perplexityResponse.json();
+      console.error('Perplexity API error:', errorData);
+      throw new Error(`Perplexity API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const gptResponse = await openaiResponse.json();
-    console.log('Received GPT response:', gptResponse);
+    const gptResponse = await perplexityResponse.json();
+    console.log('Received Perplexity response:', gptResponse);
 
     const answer = gptResponse.choices[0].message.content;
 

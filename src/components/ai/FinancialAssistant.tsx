@@ -29,11 +29,11 @@ export const FinancialAssistant = () => {
       
       console.log('Sending query to financial-assistant:', input);
       
-      const { data, error, status } = await supabase.functions.invoke('financial-assistant', {
+      const { data, error } = await supabase.functions.invoke('financial-assistant', {
         body: { query: input }
       });
 
-      console.log('Response from financial-assistant:', { data, error, status });
+      console.log('Response from financial-assistant:', { data, error });
 
       if (error) {
         console.error('Supabase function error:', error);
@@ -41,13 +41,6 @@ export const FinancialAssistant = () => {
       }
 
       if (data?.error) {
-        if (data.type === 'QUOTA_EXCEEDED') {
-          setMessages(prev => [...prev, { 
-            role: 'error', 
-            content: 'O assistente financeiro está temporariamente indisponível devido ao limite de uso da API. Por favor, tente novamente mais tarde ou entre em contato com o administrador do sistema.' 
-          }]);
-          return;
-        }
         throw new Error(data.error);
       }
 
@@ -59,11 +52,10 @@ export const FinancialAssistant = () => {
       setInput('');
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast({
-        title: "Erro ao processar pergunta",
-        description: error.message || "Não foi possível obter uma resposta do assistente.",
-        variant: "destructive",
-      });
+      setMessages(prev => [...prev, { 
+        role: 'error', 
+        content: error.message || "Não foi possível obter uma resposta do assistente."
+      }]);
     } finally {
       setIsLoading(false);
     }
