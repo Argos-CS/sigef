@@ -54,15 +54,15 @@ serve(async (req) => {
 
     console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
 
-    // Fazer requisição para a Perplexity
-    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+    // Fazer requisição para a Groq
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
+        'Authorization': `Bearer ${Deno.env.get('GROQ_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
@@ -84,14 +84,14 @@ serve(async (req) => {
       }),
     });
 
-    if (!perplexityResponse.ok) {
-      const errorData = await perplexityResponse.json();
-      console.error('Perplexity API error:', errorData);
-      throw new Error(`Perplexity API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (!groqResponse.ok) {
+      const errorData = await groqResponse.json();
+      console.error('Groq API error:', errorData);
+      throw new Error(`Groq API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const gptResponse = await perplexityResponse.json();
-    console.log('Received Perplexity response:', gptResponse);
+    const gptResponse = await groqResponse.json();
+    console.log('Received Groq response:', gptResponse);
 
     const answer = gptResponse.choices[0].message.content;
 
