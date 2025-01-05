@@ -18,6 +18,19 @@ export const SaidasPorCategoriaTable: React.FC<SaidasPorCategoriaTableProps> = (
   categoriasSaida,
   totalSaidas
 }) => {
+  console.log('Categorias Saída:', categoriasSaida);
+  
+  // Garantir que temos dados válidos antes de processar
+  const categoriasValidas = Object.entries(categoriasSaida || {})
+    .filter(([nome]) => nome && typeof nome === 'string')
+    .map(([categoria, valor]) => {
+      const categoriaName = categoria.includes(' - ') ? categoria.split(' - ')[1] : categoria;
+      return { name: categoriaName, valor };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  console.log('Categorias Processadas:', categoriasValidas);
+
   return (
     <div className="rounded-lg border bg-card">
       <Table>
@@ -29,23 +42,17 @@ export const SaidasPorCategoriaTable: React.FC<SaidasPorCategoriaTableProps> = (
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Object.entries(categoriasSaida)
-            .map(([categoria, valor]) => {
-              const categoriaName = categoria.split(' - ')[1]; // Get only the name part
-              return { name: categoriaName, valor };
-            })
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map(({ name, valor }) => (
-              <TableRow key={name}>
-                <TableCell>{name}</TableCell>
-                <TableCell className="text-right text-red-600">
-                  {formatarMoeda(valor)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {((valor / totalSaidas) * 100).toFixed(2)}%
-                </TableCell>
-              </TableRow>
-            ))}
+          {categoriasValidas.map(({ name, valor }) => (
+            <TableRow key={name}>
+              <TableCell>{name}</TableCell>
+              <TableCell className="text-right text-red-600">
+                {formatarMoeda(valor)}
+              </TableCell>
+              <TableCell className="text-right">
+                {totalSaidas > 0 ? ((valor / totalSaidas) * 100).toFixed(2) : '0.00'}%
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

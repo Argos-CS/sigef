@@ -23,21 +23,28 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
   const [categoriasSecundarias, setCategoriasSecundarias] = useState<Categoria[]>([]);
   const { toast } = useToast();
 
+  console.log('Movimentações recebidas:', movimentacoes);
+
   useEffect(() => {
     const fetchCategorias = async () => {
-      const { data, error } = await supabase
-        .from('categorias_plano_contas')
-        .select('*')
-        .eq('nivel', 'secundaria')
-        .eq('tipo', 'saida')
-        .order('codigo');
-      
-      if (error) {
-        console.error('Erro ao carregar categorias:', error);
-        return;
+      try {
+        const { data, error } = await supabase
+          .from('categorias_plano_contas')
+          .select('*')
+          .eq('nivel', 'secundaria')
+          .eq('tipo', 'saida')
+          .order('codigo');
+        
+        if (error) {
+          console.error('Erro ao carregar categorias:', error);
+          return;
+        }
+        
+        console.log('Categorias carregadas:', data);
+        setCategoriasSecundarias(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar categorias:', error);
       }
-      
-      setCategoriasSecundarias(data);
     };
 
     fetchCategorias();
@@ -51,6 +58,8 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
   }, [movimentacoes]);
 
   const demonstrativoData = React.useMemo(() => {
+    console.log('Calculando demonstrativo data...');
+    
     const [year, month] = selectedMonth.split('-');
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0);
@@ -60,9 +69,13 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       return data >= startDate && data <= endDate;
     });
 
+    console.log('Movimentações filtradas:', movimentacoesFiltradas);
+
     const categoriasSaida: Record<string, number> = {};
     categoriasSecundarias.forEach(cat => {
-      categoriasSaida[cat.nome] = 0;
+      if (cat && cat.nome) {
+        categoriasSaida[cat.nome] = 0;
+      }
     });
 
     const demonstrativo = [
@@ -100,14 +113,17 @@ export const DemonstrativoContabil: React.FC<DemonstrativoContabilProps> = ({ mo
       };
     });
 
+    // Processar saídas por categoria
     movimentacoesFiltradas
       .filter(m => m.tipo === 'saida')
       .forEach(m => {
         const categoria = categoriasSecundarias.find(c => c.id === m.categoria_id);
-        if (categoria) {
+        if (categoria && categoria.nome) {
           categoriasSaida[categoria.nome] = (categoriasSaida[categoria.nome] || 0) + Number(m.valor);
         }
       });
+
+    console.log('Categorias de saída processadas:', categoriasSaida);
 
     const totals = demonstrativo.reduce((acc, curr) => ({
       saldoInicial: acc.saldoInicial + curr.saldoInicial,
