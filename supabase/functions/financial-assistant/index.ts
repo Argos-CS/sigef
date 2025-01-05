@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { format, parseISO, isWithinInterval } from 'https://esm.sh/date-fns@2.30.0';
+import { ptBR } from 'https://esm.sh/date-fns/locale@2.30.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +27,7 @@ serve(async (req) => {
     const { data: movimentacoes, error: movError } = await supabaseClient
       .from('movimentacoes')
       .select('*')
-      .order('data', { ascending: false });
+      .order('data', { ascending: true });
 
     if (movError) {
       console.error('Error fetching movimentacoes:', movError);
@@ -34,88 +36,82 @@ serve(async (req) => {
 
     console.log('Retrieved movimentacoes count:', movimentacoes?.length);
 
-    // Calcular métricas financeiras
-    const saldos = {
-      Bradesco: 0,
-      Cora: 0,
-      Dinheiro: 0
+    // Função para calcular saldo até uma data específica
+    const calcularSaldoAteData = (dataFinal: string) => {
+      const saldos = {
+        Bradesco: 0,
+        Cora: 0,
+        Dinheiro: 0
+      };
+
+      movimentacoes?.forEach(mov => {
+        if (mov.data <= dataFinal) {
+          const valor = Number(mov.valor);
+          if (mov.tipo === 'entrada') {
+            saldos[mov.conta] += valor;
+          } else {
+            saldos[mov.conta] -= valor;
+          }
+        }
+      });
+
+      return saldos;
     };
 
-    const totais = {
-      entradas: 0,
-      saidas: 0
+    // Função para formatar valores monetários
+    const formatarMoeda = (valor: number) => {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(valor);
     };
 
-    const movimentacoesPorTipo = {
-      entrada: [],
-      saida: []
+    // Função para formatar data
+    const formatarData = (data: string) => {
+      return format(parseISO(data), 'dd/MM/yyyy', { locale: ptBR });
     };
 
-    movimentacoes?.forEach(mov => {
-      const valor = Number(mov.valor);
-      
-      // Atualizar saldos por conta
-      if (mov.tipo === 'entrada') {
-        saldos[mov.conta] += valor;
-        totais.entradas += valor;
-        movimentacoesPorTipo.entrada.push(mov);
-      } else {
-        saldos[mov.conta] -= valor;
-        totais.saidas += valor;
-        movimentacoesPorTipo.saida.push(mov);
+    // Extrair datas mencionadas na pergunta
+    const extrairData = (texto: string) => {
+      const regexData = /(\d{2}\/\d{2}\/\d{4}|\d{2}\-\d{2}\-\d{4})/g;
+      const matches = texto.match(regexData);
+      if (matches) {
+        const data = matches[0].replace(/\-/g, '/');
+        const [dia, mes, ano] = data.split('/');
+        return `${ano}-${mes}-${dia}`;
       }
-    });
+      return null;
+    };
 
-    // Preparar últimas movimentações com formatação melhorada
+    // Preparar contexto financeiro
+    const dataConsulta = extrairData(query) || new Date().toISOString().split('T')[0];
+    const saldos = calcularSaldoAteData(dataConsulta);
+    const saldoTotal = Object.values(saldos).reduce((a, b) => a + b, 0);
+
+    // Encontrar últimas 5 movimentações até a data
     const ultimasMovimentacoes = movimentacoes
-      ?.slice(0, 5)
+      ?.filter(mov => mov.data <= dataConsulta)
+      .slice(-5)
       .map(mov => ({
-        data: new Date(mov.data).toLocaleDateString('pt-BR'),
-        tipo: mov.tipo.charAt(0).toUpperCase() + mov.tipo.slice(1),
+        data: formatarData(mov.data),
+        tipo: mov.tipo,
         conta: mov.conta,
-        valor: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(Number(mov.valor)),
+        valor: formatarMoeda(Number(mov.valor)),
         descricao: mov.descricao
       }));
 
-    // Calcular métricas adicionais
-    const saldoTotal = Object.values(saldos).reduce((a, b) => a + b, 0);
-    const mediaMovimentacoes = totais.entradas + totais.saidas / (movimentacoes?.length || 1);
-
-    // Preparar contexto financeiro estruturado e formatado
-    const financialContext = {
+    // Preparar contexto financeiro estruturado
+    const contextoFinanceiro = {
+      dataConsulta: formatarData(dataConsulta),
       saldos: Object.entries(saldos).map(([conta, valor]) => ({
         conta,
-        valor: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(valor)
+        valor: formatarMoeda(valor)
       })),
-      ultimasMovimentacoes,
-      metricas: {
-        saldoTotal: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(saldoTotal),
-        totalEntradas: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(totais.entradas),
-        totalSaidas: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(totais.saidas),
-        quantidadeMovimentacoes: movimentacoes?.length || 0,
-        mediaMovimentacoes: new Intl.NumberFormat('pt-BR', { 
-          style: 'currency', 
-          currency: 'BRL' 
-        }).format(mediaMovimentacoes)
-      }
+      saldoTotal: formatarMoeda(saldoTotal),
+      ultimasMovimentacoes
     };
 
-    console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
+    console.log('Prepared financial context:', JSON.stringify(contextoFinanceiro, null, 2));
 
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -129,32 +125,29 @@ serve(async (req) => {
           {
             role: 'system',
             content: `Você é um assistente financeiro especializado em análise de dados financeiros.
-                     Analise cuidadosamente os dados abaixo e forneça respostas diretas e bem estruturadas:
+                     Analise os dados fornecidos e responda de forma clara e estruturada, seguindo estas diretrizes:
 
-                     📊 RESUMO DOS SALDOS:
-                     ${financialContext.saldos
-                       .map(({ conta, valor }) => `${conta}: ${valor}`)
+                     1. Use emojis relevantes para tornar a resposta mais amigável
+                     2. Estruture a resposta em seções claras com títulos em negrito
+                     3. Sempre formate valores monetários adequadamente
+                     4. Seja direto e objetivo nas respostas
+                     5. Se a pergunta envolver uma data específica, confirme a data na resposta
+                     6. Se não houver dados suficientes, explique claramente o motivo
+
+                     Dados disponíveis para análise:
+                     
+                     📅 Data da Consulta: ${contextoFinanceiro.dataConsulta}
+
+                     💰 Saldos por Conta:
+                     ${contextoFinanceiro.saldos.map(s => `${s.conta}: ${s.valor}`).join('\n')}
+
+                     🏦 Saldo Total: ${contextoFinanceiro.saldoTotal}
+
+                     📝 Últimas Movimentações:
+                     ${contextoFinanceiro.ultimasMovimentacoes
+                       .map(m => `${m.data} - ${m.tipo}: ${m.valor} (${m.conta}) - ${m.descricao}`)
                        .join('\n')}
-
-                     📈 MÉTRICAS IMPORTANTES:
-                     • Saldo Total: ${financialContext.metricas.saldoTotal}
-                     • Total de Entradas: ${financialContext.metricas.totalEntradas}
-                     • Total de Saídas: ${financialContext.metricas.totalSaidas}
-                     • Quantidade de Movimentações: ${financialContext.metricas.quantidadeMovimentacoes}
-                     • Média por Movimentação: ${financialContext.metricas.mediaMovimentacoes}
-
-                     🔄 ÚLTIMAS MOVIMENTAÇÕES:
-                     ${financialContext.ultimasMovimentacoes
-                       .map(mov => `${mov.data} - ${mov.tipo}: ${mov.valor} (${mov.conta}) - ${mov.descricao}`)
-                       .join('\n')}
-
-                     Instruções para respostas:
-                     1. Seja direto e objetivo
-                     2. Use os dados fornecidos acima para fundamentar suas respostas
-                     3. Formate as respostas usando emojis e marcadores para melhor legibilidade
-                     4. Se a pergunta for sobre saldos ou movimentações específicas, cite os números exatos
-                     5. Sempre responda em português do Brasil
-                     6. Se não tiver certeza sobre algo, admita que não tem a informação necessária`
+                     `
           },
           {
             role: 'user',
@@ -178,7 +171,7 @@ serve(async (req) => {
     const answer = gptResponse.choices[0].message.content;
 
     return new Response(
-      JSON.stringify({ answer, context: financialContext }),
+      JSON.stringify({ answer, context: contextoFinanceiro }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
