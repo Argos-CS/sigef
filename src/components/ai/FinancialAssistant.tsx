@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
 import { Loader2, AlertTriangle } from "lucide-react";
@@ -18,7 +17,6 @@ export const FinancialAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('groq');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,10 +30,7 @@ export const FinancialAssistant = () => {
       console.log('Sending query to financial-assistant:', input);
       
       const { data, error } = await supabase.functions.invoke('financial-assistant', {
-        body: { 
-          query: input,
-          model: selectedModel
-        }
+        body: { query: input }
       });
 
       console.log('Response from financial-assistant:', { data, error });
@@ -69,7 +64,7 @@ export const FinancialAssistant = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Assistente Financeiro</CardTitle>
+        <CardTitle>Assistente Financeiro (Claude)</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4 mb-4">
@@ -104,21 +99,6 @@ export const FinancialAssistant = () => {
         </ScrollArea>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-2">
-            <Select
-              value={selectedModel}
-              onValueChange={setSelectedModel}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecione o modelo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="groq">Groq (Padrão)</SelectItem>
-                <SelectItem value="anthropic">Claude 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
           <div className="flex gap-2">
             <Input
               value={input}
