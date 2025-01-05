@@ -41,6 +41,10 @@ export const FinancialAssistant = () => {
       }
 
       if (data?.error) {
+        // Check for credit balance error
+        if (data.error.includes('créditos da API Anthropic esgotados')) {
+          throw new Error('O assistente está temporariamente indisponível devido a limitações de crédito. Por favor, tente novamente mais tarde.');
+        }
         throw new Error(data.error);
       }
 
@@ -60,7 +64,7 @@ export const FinancialAssistant = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível processar sua pergunta. Tente novamente.",
+        description: error.message || "Não foi possível processar sua pergunta. Tente novamente.",
       });
     } finally {
       setIsLoading(false);
