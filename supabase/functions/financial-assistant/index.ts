@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,13 +16,12 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Received query:', query);
     
-    // Criar cliente Supabase
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Buscar movimentações mais recentes primeiro
+    // Buscar todas as movimentações ordenadas por data
     const { data: movimentacoes, error: movError } = await supabaseClient
       .from('movimentacoes')
       .select('*')
@@ -36,46 +34,89 @@ serve(async (req) => {
 
     console.log('Retrieved movimentacoes count:', movimentacoes?.length);
 
-    // Calcular saldos por conta
-    const saldos: Record<string, number> = {
+    // Calcular métricas financeiras
+    const saldos = {
       Bradesco: 0,
       Cora: 0,
       Dinheiro: 0
     };
 
+    const totais = {
+      entradas: 0,
+      saidas: 0
+    };
+
+    const movimentacoesPorTipo = {
+      entrada: [],
+      saida: []
+    };
+
     movimentacoes?.forEach(mov => {
       const valor = Number(mov.valor);
+      
+      // Atualizar saldos por conta
       if (mov.tipo === 'entrada') {
         saldos[mov.conta] += valor;
+        totais.entradas += valor;
+        movimentacoesPorTipo.entrada.push(mov);
       } else {
         saldos[mov.conta] -= valor;
+        totais.saidas += valor;
+        movimentacoesPorTipo.saida.push(mov);
       }
     });
 
-    // Preparar resumo das últimas movimentações
+    // Preparar últimas movimentações com formatação melhorada
     const ultimasMovimentacoes = movimentacoes
       ?.slice(0, 5)
       .map(mov => ({
-        data: mov.data,
-        tipo: mov.tipo,
+        data: new Date(mov.data).toLocaleDateString('pt-BR'),
+        tipo: mov.tipo.charAt(0).toUpperCase() + mov.tipo.slice(1),
         conta: mov.conta,
-        valor: Number(mov.valor),
+        valor: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(Number(mov.valor)),
         descricao: mov.descricao
       }));
 
-    // Preparar contexto financeiro estruturado
+    // Calcular métricas adicionais
+    const saldoTotal = Object.values(saldos).reduce((a, b) => a + b, 0);
+    const mediaMovimentacoes = totais.entradas + totais.saidas / (movimentacoes?.length || 1);
+
+    // Preparar contexto financeiro estruturado e formatado
     const financialContext = {
-      saldosAtuais: saldos,
+      saldos: Object.entries(saldos).map(([conta, valor]) => ({
+        conta,
+        valor: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(valor)
+      })),
       ultimasMovimentacoes,
-      resumoGeral: {
-        totalContas: Object.values(saldos).reduce((a, b) => a + b, 0),
-        quantidadeMovimentacoes: movimentacoes?.length || 0
+      metricas: {
+        saldoTotal: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(saldoTotal),
+        totalEntradas: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(totais.entradas),
+        totalSaidas: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(totais.saidas),
+        quantidadeMovimentacoes: movimentacoes?.length || 0,
+        mediaMovimentacoes: new Intl.NumberFormat('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }).format(mediaMovimentacoes)
       }
     };
 
     console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
 
-    // Fazer requisição para a Groq
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -87,27 +128,33 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente financeiro especializado em análise de dados.
-                     Você tem acesso aos seguintes dados financeiros atualizados:
-                     
-                     SALDOS ATUAIS:
-                     ${Object.entries(saldos)
-                       .map(([conta, valor]) => `${conta}: R$ ${valor.toFixed(2)}`)
+            content: `Você é um assistente financeiro especializado em análise de dados financeiros.
+                     Analise cuidadosamente os dados abaixo e forneça respostas diretas e bem estruturadas:
+
+                     📊 RESUMO DOS SALDOS:
+                     ${financialContext.saldos
+                       .map(({ conta, valor }) => `${conta}: ${valor}`)
                        .join('\n')}
-                     
-                     ÚLTIMAS MOVIMENTAÇÕES:
-                     ${ultimasMovimentacoes
-                       ?.map(mov => 
-                         `${mov.data}: ${mov.tipo} de R$ ${mov.valor.toFixed(2)} em ${mov.conta} - ${mov.descricao}`)
+
+                     📈 MÉTRICAS IMPORTANTES:
+                     • Saldo Total: ${financialContext.metricas.saldoTotal}
+                     • Total de Entradas: ${financialContext.metricas.totalEntradas}
+                     • Total de Saídas: ${financialContext.metricas.totalSaidas}
+                     • Quantidade de Movimentações: ${financialContext.metricas.quantidadeMovimentacoes}
+                     • Média por Movimentação: ${financialContext.metricas.mediaMovimentacoes}
+
+                     🔄 ÚLTIMAS MOVIMENTAÇÕES:
+                     ${financialContext.ultimasMovimentacoes
+                       .map(mov => `${mov.data} - ${mov.tipo}: ${mov.valor} (${mov.conta}) - ${mov.descricao}`)
                        .join('\n')}
-                     
-                     RESUMO GERAL:
-                     - Total em todas as contas: R$ ${financialContext.resumoGeral.totalContas.toFixed(2)}
-                     - Quantidade total de movimentações: ${financialContext.resumoGeral.quantidadeMovimentacoes}
-                     
-                     Responda de forma direta e objetiva, usando os dados acima.
-                     Se a pergunta for sobre saldos ou movimentações, use os dados fornecidos.
-                     Responda sempre em português do Brasil.`
+
+                     Instruções para respostas:
+                     1. Seja direto e objetivo
+                     2. Use os dados fornecidos acima para fundamentar suas respostas
+                     3. Formate as respostas usando emojis e marcadores para melhor legibilidade
+                     4. Se a pergunta for sobre saldos ou movimentações específicas, cite os números exatos
+                     5. Sempre responda em português do Brasil
+                     6. Se não tiver certeza sobre algo, admita que não tem a informação necessária`
           },
           {
             role: 'user',
