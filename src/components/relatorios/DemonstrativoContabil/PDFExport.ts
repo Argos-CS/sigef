@@ -1,15 +1,14 @@
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatarMoeda } from '@/utils/formatters';
-import { Movimentacao } from '@/types/movimentacao';
-import { Categoria } from './types';
+import { BalanceteData, Categoria } from './types';
 
-interface PDFExportProps {
-  demonstrativo: any[];
+interface ExportToPDFParams {
+  demonstrativo: BalanceteData[];
   categoriasSaida: Record<string, number>;
-  movimentacoesFiltradas: Movimentacao[];
+  movimentacoesFiltradas: any[];
   categoriasSecundarias: Categoria[];
   monthYear: string;
   totals: {
@@ -27,135 +26,94 @@ export const exportToPDF = ({
   categoriasSecundarias,
   monthYear,
   totals
-}: PDFExportProps) => {
+}: ExportToPDFParams): boolean => {
   try {
     const doc = new jsPDF();
-    const currentDate = format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR });
-    const headerText = `Duque de Caxias, ${currentDate}`;
-    
-    // Header on each page
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    const headerWidth = doc.getStringUnitWidth(headerText) * 10 / doc.internal.scaleFactor;
-    doc.text(headerText, doc.internal.pageSize.width - 15 - headerWidth, 10);
-    
-    // Title
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DEMONSTRATIVO CONTÁBIL', doc.internal.pageSize.width / 2, 25, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(monthYear.toUpperCase(), doc.internal.pageSize.width / 2, 35, { align: 'center' });
-    
-    // 1. Balancete
-    doc.setFontSize(12);
-    doc.text('1. Balancete:', 15, 45);
-    
-    const tableData = [
-      ...demonstrativo.map(row => [
-        row.conta,
-        formatarMoeda(row.saldoInicial),
-        formatarMoeda(row.entradas),
-        formatarMoeda(row.saidas),
-        formatarMoeda(row.saldoFinal),
-      ]),
-      // Add totals row with bold style
-      [
-        { content: 'TOTAL', styles: { fontStyle: 'bold' } },
-        { content: formatarMoeda(totals.saldoInicial), styles: { fontStyle: 'bold' } },
-        { content: formatarMoeda(totals.entradas), styles: { fontStyle: 'bold' } },
-        { content: formatarMoeda(totals.saidas), styles: { fontStyle: 'bold' } },
-        { content: formatarMoeda(totals.saldoFinal), styles: { fontStyle: 'bold' } },
-      ]
-    ];
+    const pageWidth = doc.internal.pageSize.width;
 
-    doc.autoTable({
+    // Título
+    doc.setFontSize(16);
+    doc.text('Demonstrativo Contábil', pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(monthYear, pageWidth / 2, 30, { align: 'center' });
+
+    // 1. Balancete
+    doc.setFontSize(14);
+    doc.text('1. Balancete', 14, 45);
+
+    autoTable(doc, {
       startY: 50,
       head: [['Conta', 'Saldo Inicial', 'Entradas', 'Saídas', 'Saldo Final']],
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [70, 70, 70] },
+      body: [
+        ...demonstrativo.map(item => [
+          item.conta,
+          formatarMoeda(item.saldoInicial),
+          formatarMoeda(item.entradas),
+          formatarMoeda(item.saidas),
+          formatarMoeda(item.saldoFinal)
+        ]),
+        [
+          'Total',
+          formatarMoeda(totals.saldoInicial),
+          formatarMoeda(totals.entradas),
+          formatarMoeda(totals.saidas),
+          formatarMoeda(totals.saldoFinal)
+        ]
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [66, 66, 66] }
     });
 
     // 2. Saídas por Categoria
-    const startY = (doc.lastAutoTable?.finalY || 50) + 15;
-    doc.setFontSize(12);
-    doc.text('2. Saídas por Categoria:', 15, startY);
-    
+    const finalY = (doc as any).lastAutoTable.finalY || 50;
+    doc.setFontSize(14);
+    doc.text('2. Saídas por Categoria', 14, finalY + 15);
+
     const categoriasData = Object.entries(categoriasSaida)
-      .sort(([a], [b]) => a.localeCompare(b))
+      .filter(([_, valor]) => valor > 0)
       .map(([categoria, valor]) => [
         categoria,
         formatarMoeda(valor),
-        `${((valor / totals.saidas) * 100).toFixed(2)}%`,
+        ((valor / totals.saidas) * 100).toFixed(2) + '%'
       ]);
 
-    doc.autoTable({
-      startY: startY + 5,
+    autoTable(doc, {
+      startY: finalY + 20,
       head: [['Categoria', 'Valor', '% do Total']],
-      body: categoriasData,
-      theme: 'grid',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [70, 70, 70] },
+      body: [
+        ...categoriasData,
+        ['Total', formatarMoeda(totals.saidas), '100%']
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [66, 66, 66] }
     });
 
-    // 3. Detalhamento dos Registros Financeiros
-    const detailStartY = (doc.lastAutoTable?.finalY || startY) + 15;
-    doc.setFontSize(12);
-    doc.text('3. Detalhamento dos Registros Financeiros:', 15, detailStartY);
+    // 3. Detalhamento dos Registros
+    const finalY2 = (doc as any).lastAutoTable.finalY || 50;
+    doc.setFontSize(14);
+    doc.text('3. Detalhamento dos Registros Financeiros', 14, finalY2 + 15);
 
-    const detailData = movimentacoesFiltradas
+    const movimentacoesFormatadas = movimentacoesFiltradas
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-      .map((mov, index) => {
+      .map(mov => {
         const categoria = categoriasSecundarias.find(c => c.id === mov.categoria_id);
-        const categoriaName = categoria ? categoria.nome : 'Sem categoria';
-        const valor = Number(mov.valor);
         return [
-          (index + 1).toString(),
           format(new Date(mov.data), 'dd/MM/yyyy'),
+          mov.tipo === 'entrada' ? 'Entrada' : 'Saída',
           mov.conta,
-          categoriaName,
+          categoria?.nome || 'Sem categoria',
           mov.descricao,
-          {
-            content: formatarMoeda(valor),
-            styles: {
-              textColor: mov.tipo === 'entrada' ? [0, 128, 0] : [255, 0, 0],
-              fontStyle: 'bold'
-            }
-          },
+          formatarMoeda(mov.valor)
         ];
       });
 
-    doc.autoTable({
-      startY: detailStartY + 5,
-      head: [['ID', 'Data', 'Conta', 'Categoria', 'Descrição', 'Valor']],
-      body: detailData,
-      theme: 'grid',
+    autoTable(doc, {
+      startY: finalY2 + 20,
+      head: [['Data', 'Tipo', 'Conta', 'Categoria', 'Descrição', 'Valor']],
+      body: movimentacoesFormatadas,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [70, 70, 70] },
-    });
-
-    // 4. Assinaturas
-    const signatureStartY = (doc.lastAutoTable?.finalY || detailStartY) + 30;
-    doc.setFontSize(12);
-    doc.text('4. Conferido e assinado por:', 15, signatureStartY);
-
-    const signatures = [
-      'Assistente Administrativo',
-      'Tesoureiro 2',
-      'Tesoureiro 1',
-      'Auditor Fiscal',
-      'Pastor Presidente'
-    ];
-
-    let currentY = signatureStartY + 20;
-    signatures.forEach(title => {
-      doc.line(15, currentY, 85, currentY);
-      doc.setFontSize(8);
-      doc.text(title, 15, currentY + 5);
-      doc.line(95, currentY, 165, currentY);
-      doc.text('Data: ___/___/______', 95, currentY + 5);
-      currentY += 20;
+      headStyles: { fillColor: [66, 66, 66] }
     });
 
     // Footer on each page
@@ -163,20 +121,19 @@ export const exportToPDF = ({
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'italic');
-      const footerText = `pág. ${i} de ${totalPages}`;
-      const footerWidth = doc.getStringUnitWidth(footerText) * 8 / doc.internal.scaleFactor;
       doc.text(
-        footerText,
-        doc.internal.pageSize.width / 2 - footerWidth / 2,
-        doc.internal.pageSize.height - 10
+        `Página ${i} de ${totalPages}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
       );
     }
 
-    doc.save(`balancete-${monthYear}.pdf`);
+    // Save the PDF
+    doc.save(`balancete-${format(new Date(), 'yyyy-MM')}.pdf`);
     return true;
   } catch (error) {
-    console.error('Erro ao exportar PDF:', error);
+    console.error('Erro ao gerar PDF:', error);
     return false;
   }
 };
