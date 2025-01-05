@@ -23,12 +23,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Buscar dados financeiros
+    // Buscar movimentações mais recentes primeiro
     const { data: movimentacoes, error: movError } = await supabaseClient
       .from('movimentacoes')
       .select('*')
-      .order('data', { ascending: false })
-      .limit(100);
+      .order('data', { ascending: false });
 
     if (movError) {
       console.error('Error fetching movimentacoes:', movError);
@@ -37,19 +36,41 @@ serve(async (req) => {
 
     console.log('Retrieved movimentacoes count:', movimentacoes?.length);
 
-    // Preparar contexto para a IA
+    // Calcular saldos por conta
+    const saldos: Record<string, number> = {
+      Bradesco: 0,
+      Cora: 0,
+      Dinheiro: 0
+    };
+
+    movimentacoes?.forEach(mov => {
+      const valor = Number(mov.valor);
+      if (mov.tipo === 'entrada') {
+        saldos[mov.conta] += valor;
+      } else {
+        saldos[mov.conta] -= valor;
+      }
+    });
+
+    // Preparar resumo das últimas movimentações
+    const ultimasMovimentacoes = movimentacoes
+      ?.slice(0, 5)
+      .map(mov => ({
+        data: mov.data,
+        tipo: mov.tipo,
+        conta: mov.conta,
+        valor: Number(mov.valor),
+        descricao: mov.descricao
+      }));
+
+    // Preparar contexto financeiro estruturado
     const financialContext = {
-      totalMovimentacoes: movimentacoes?.length,
-      movimentacoesRecentes: movimentacoes?.slice(0, 5),
-      resumoFinanceiro: movimentacoes?.reduce((acc, mov) => {
-        const valor = Number(mov.valor);
-        if (mov.tipo === 'entrada') {
-          acc.totalEntradas += valor;
-        } else {
-          acc.totalSaidas += valor;
-        }
-        return acc;
-      }, { totalEntradas: 0, totalSaidas: 0 })
+      saldosAtuais: saldos,
+      ultimasMovimentacoes,
+      resumoGeral: {
+        totalContas: Object.values(saldos).reduce((a, b) => a + b, 0),
+        quantidadeMovimentacoes: movimentacoes?.length || 0
+      }
     };
 
     console.log('Prepared financial context:', JSON.stringify(financialContext, null, 2));
@@ -66,12 +87,26 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente financeiro especializado em análise de dados. 
-                     Você tem acesso aos seguintes dados financeiros:
-                     ${JSON.stringify(financialContext, null, 2)}
+            content: `Você é um assistente financeiro especializado em análise de dados.
+                     Você tem acesso aos seguintes dados financeiros atualizados:
                      
-                     Responda de forma clara e profissional, usando os dados disponíveis para fundamentar suas análises.
-                     Se necessário, faça cálculos e apresente métricas relevantes.
+                     SALDOS ATUAIS:
+                     ${Object.entries(saldos)
+                       .map(([conta, valor]) => `${conta}: R$ ${valor.toFixed(2)}`)
+                       .join('\n')}
+                     
+                     ÚLTIMAS MOVIMENTAÇÕES:
+                     ${ultimasMovimentacoes
+                       ?.map(mov => 
+                         `${mov.data}: ${mov.tipo} de R$ ${mov.valor.toFixed(2)} em ${mov.conta} - ${mov.descricao}`)
+                       .join('\n')}
+                     
+                     RESUMO GERAL:
+                     - Total em todas as contas: R$ ${financialContext.resumoGeral.totalContas.toFixed(2)}
+                     - Quantidade total de movimentações: ${financialContext.resumoGeral.quantidadeMovimentacoes}
+                     
+                     Responda de forma direta e objetiva, usando os dados acima.
+                     Se a pergunta for sobre saldos ou movimentações, use os dados fornecidos.
                      Responda sempre em português do Brasil.`
           },
           {
