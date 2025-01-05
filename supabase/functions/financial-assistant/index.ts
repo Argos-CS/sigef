@@ -161,13 +161,21 @@ async function callGroqAPI(query: string, contextoFinanceiro: any) {
 }
 
 async function callGrokAPI(query: string, contextoFinanceiro: any) {
-  const grokResponse = await fetch('https://api.grok.x/v1/chat/completions', {
+  const grokApiKey = Deno.env.get('GROK_API_KEY');
+  if (!grokApiKey) {
+    throw new Error('GROK_API_KEY não configurada');
+  }
+
+  console.log('Calling Grok API...');
+  
+  const grokResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('GROK_API_KEY')}`,
+      'Authorization': `Bearer ${grokApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      model: 'mixtral-8x7b-32768',
       messages: [
         {
           role: 'system',
