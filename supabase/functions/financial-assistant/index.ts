@@ -32,21 +32,22 @@ serve(async (req) => {
     const contextoFinanceiro = prepararContextoFinanceiro(movimentacoes);
     console.log('Prepared financial context:', JSON.stringify(contextoFinanceiro, null, 2));
 
-    const grokApiKey = Deno.env.get('GROK_API_KEY');
-    if (!grokApiKey) {
-      throw new Error('GROK_API_KEY não configurada');
+    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    if (!groqApiKey) {
+      throw new Error('GROQ_API_KEY não configurada');
     }
 
-    console.log('Sending request to Grok API...');
+    console.log('Sending request to Groq API...');
     
-    const response = await fetch('https://api.grok.x/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${grokApiKey}`,
+        'Authorization': `Bearer ${groqApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
       body: JSON.stringify({
+        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
@@ -88,16 +89,16 @@ serve(async (req) => {
       }),
     });
 
-    console.log('Grok API response status:', response.status);
+    console.log('Groq API response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Grok API error response:', errorData);
-      throw new Error(`Erro na API Grok: ${response.status} - ${errorData}`);
+      console.error('Groq API error response:', errorData);
+      throw new Error(`Erro na API Groq: ${response.status} - ${errorData}`);
     }
 
     const result = await response.json();
-    console.log('Grok API response received successfully');
+    console.log('Groq API response received successfully');
 
     return new Response(
       JSON.stringify({ answer: result.choices[0].message.content }),
