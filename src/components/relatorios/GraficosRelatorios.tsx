@@ -20,8 +20,38 @@ interface GraficosRelatoriosProps {
 }
 
 const GraficosRelatorios: React.FC<GraficosRelatoriosProps> = ({ dashboardData }) => {
-  // Ordenar os dados por data
-  const sortedChartData = [...dashboardData.chartData].sort((a, b) => a.name.localeCompare(b.name));
+  console.log('GraficosRelatorios - Received dashboardData:', dashboardData);
+
+  // Validate and prepare chart data
+  const sortedChartData = React.useMemo(() => {
+    if (!dashboardData?.chartData?.length) {
+      console.log('No chart data available');
+      return [];
+    }
+    return [...dashboardData.chartData].sort((a, b) => a.name.localeCompare(b.name));
+  }, [dashboardData.chartData]);
+
+  // Prepare pie chart data
+  const pieChartData = React.useMemo(() => {
+    if (!dashboardData?.totalPorConta) {
+      console.log('No total por conta data available');
+      return [];
+    }
+
+    return Object.entries(dashboardData.totalPorConta)
+      .filter(([name]) => name && typeof name === 'string')
+      .map(([name, { entradas, saidas }]) => ({
+        name,
+        value: entradas - saidas
+      }));
+  }, [dashboardData.totalPorConta]);
+
+  console.log('Processed pie chart data:', pieChartData);
+
+  if (!dashboardData) {
+    console.log('No dashboard data available');
+    return <div>Carregando dados...</div>;
+  }
 
   return (
     <>
@@ -52,19 +82,21 @@ const GraficosRelatorios: React.FC<GraficosRelatoriosProps> = ({ dashboardData }
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie
-                data={Object.entries(dashboardData.totalPorConta).map(([name, { entradas, saidas }]) => ({ name, value: entradas - saidas }))}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {Object.entries(dashboardData.totalPorConta).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+              {pieChartData.length > 0 && (
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+              )}
               <Tooltip formatter={(value) => formatarMoeda(Number(value))} />
               <Legend />
             </PieChart>
