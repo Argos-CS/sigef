@@ -27,16 +27,16 @@ export const FinancialAssistant = () => {
       setIsLoading(true);
       setMessages(prev => [...prev, { role: 'user', content: input }]);
       
-      console.log('Sending query to financial-assistant:', input);
+      console.log('Enviando consulta para o assistente financeiro:', input);
       
       const { data, error } = await supabase.functions.invoke('financial-assistant', {
         body: { query: input }
       });
 
-      console.log('Response from financial-assistant:', { data, error });
+      console.log('Resposta do assistente financeiro:', { data, error });
 
       if (error) {
-        console.error('Supabase function error:', error);
+        console.error('Erro na função do Supabase:', error);
         throw error;
       }
 
@@ -51,11 +51,17 @@ export const FinancialAssistant = () => {
       setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
       setInput('');
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      console.error('Erro ao processar pergunta:', error);
       setMessages(prev => [...prev, { 
         role: 'error', 
         content: error.message || "Não foi possível obter uma resposta do assistente."
       }]);
+      
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível processar sua pergunta. Tente novamente.",
+      });
     } finally {
       setIsLoading(false);
     }
