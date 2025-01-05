@@ -85,6 +85,21 @@ serve(async (req) => {
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.json();
       console.error('OpenAI API error:', errorData);
+      
+      // Check for quota exceeded error
+      if (errorData.error?.message?.includes('exceeded your current quota')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Limite de uso da API excedido. Por favor, entre em contato com o administrador do sistema.',
+            type: 'QUOTA_EXCEEDED'
+          }),
+          { 
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 

@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'error';
   content: string;
 }
 
@@ -28,15 +29,26 @@ export const FinancialAssistant = () => {
       
       console.log('Sending query to financial-assistant:', input);
       
-      const { data, error } = await supabase.functions.invoke('financial-assistant', {
+      const { data, error, status } = await supabase.functions.invoke('financial-assistant', {
         body: { query: input }
       });
 
-      console.log('Response from financial-assistant:', { data, error });
+      console.log('Response from financial-assistant:', { data, error, status });
 
       if (error) {
         console.error('Supabase function error:', error);
         throw error;
+      }
+
+      if (data?.error) {
+        if (data.type === 'QUOTA_EXCEEDED') {
+          setMessages(prev => [...prev, { 
+            role: 'error', 
+            content: 'O assistente financeiro está temporariamente indisponível devido ao limite de uso da API. Por favor, tente novamente mais tarde ou entre em contato com o administrador do sistema.' 
+          }]);
+          return;
+        }
+        throw new Error(data.error);
       }
 
       if (!data?.answer) {
@@ -72,15 +84,23 @@ export const FinancialAssistant = () => {
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  {message.content}
-                </div>
+                {message.role === 'error' ? (
+                  <Alert variant="destructive" className="max-w-[80%]">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Erro</AlertTitle>
+                    <AlertDescription>{message.content}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                )}
               </div>
             ))}
           </div>
