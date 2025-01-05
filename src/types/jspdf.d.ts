@@ -7,7 +7,7 @@ declare module 'jspdf' {
       finalY: number;
     };
     internal: {
-      getNumberOfPages(): number;
+      pages: number[];
       scaleFactor: number;
       pageSize: {
         width: number;
