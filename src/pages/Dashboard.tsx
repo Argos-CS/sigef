@@ -4,6 +4,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { startOfMonth } from 'date-fns';
 import { useDashboardCalculations } from '@/hooks/useDashboardCalculations';
+import { FinancialAssistant } from '@/components/ai/FinancialAssistant';
 
 const Dashboard = () => {
   console.log('Dashboard component rendering');
@@ -70,6 +71,10 @@ const Dashboard = () => {
           setDateRange={setDateRange}
           onReset={resetFilters}
         />
+
+        <div className="mt-8">
+          <FinancialAssistant />
+        </div>
       </div>
     </div>
   );
