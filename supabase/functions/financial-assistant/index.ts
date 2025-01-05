@@ -37,11 +37,14 @@ serve(async (req) => {
       throw new Error('GROK_API_KEY não configurada');
     }
 
+    console.log('Sending request to Grok API...');
+    
     const response = await fetch('https://api.grok.x/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${grokApiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         messages: [
@@ -85,13 +88,17 @@ serve(async (req) => {
       }),
     });
 
+    console.log('Grok API response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Grok API error:', errorData);
-      throw new Error(`Erro na API Grok: ${errorData.error?.message || 'Erro desconhecido'}`);
+      const errorData = await response.text();
+      console.error('Grok API error response:', errorData);
+      throw new Error(`Erro na API Grok: ${response.status} - ${errorData}`);
     }
 
     const result = await response.json();
+    console.log('Grok API response received successfully');
+
     return new Response(
       JSON.stringify({ answer: result.choices[0].message.content }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
