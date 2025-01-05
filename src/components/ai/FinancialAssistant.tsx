@@ -114,7 +114,7 @@ export const FinancialAssistant = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="groq">Groq (Padrão)</SelectItem>
-                <SelectItem value="grok">Grok X</SelectItem>
+                <SelectItem value="anthropic">Claude 3</SelectItem>
               </SelectContent>
             </Select>
           </div>
