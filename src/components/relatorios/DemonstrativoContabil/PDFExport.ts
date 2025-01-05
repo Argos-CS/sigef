@@ -28,6 +28,7 @@ export const exportToPDF = ({
   totals
 }: ExportToPDFParams): boolean => {
   try {
+    console.log('Starting PDF export...');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
 
@@ -117,18 +118,19 @@ export const exportToPDF = ({
     });
 
     // Footer on each page
-    const totalPages = doc.internal.pages.length - 1;
-    for (let i = 1; i <= totalPages; i++) {
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.text(
-        `Página ${i} de ${totalPages}`,
+        `Página ${i} de ${pageCount}`,
         pageWidth / 2,
         doc.internal.pageSize.height - 10,
         { align: 'center' }
       );
     }
 
+    console.log('PDF generation completed successfully');
     // Save the PDF
     doc.save(`balancete-${format(new Date(), 'yyyy-MM')}.pdf`);
     return true;

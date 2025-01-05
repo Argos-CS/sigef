@@ -1,17 +1,15 @@
-import { jsPDF } from 'jspdf';
+import 'jspdf';
 
 declare module 'jspdf' {
   interface jsPDF {
     internal: {
-      pages: number[];
-      scaleFactor: number;
       pageSize: {
         width: number;
-        getWidth: () => number;
         height: number;
+        getWidth: () => number;
         getHeight: () => number;
       };
-      getEncryptor(objectId: number): (data: string) => string;
+      pages: any[];
     };
   }
 }
