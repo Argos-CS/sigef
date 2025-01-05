@@ -10,7 +10,7 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
-    console.log('Received query:', query);
+    console.log('Recebida consulta:', query);
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -19,25 +19,33 @@ serve(async (req) => {
 
     const { data: movimentacoes, error: movError } = await supabaseClient
       .from('movimentacoes')
-      .select('*')
-      .order('data', { ascending: true });
+      .select(`
+        *,
+        categoria:categorias_plano_contas(
+          id,
+          nome,
+          codigo,
+          tipo
+        )
+      `)
+      .order('data', { ascending: false });
 
     if (movError) {
-      console.error('Error fetching movimentacoes:', movError);
+      console.error('Erro ao buscar movimentações:', movError);
       throw movError;
     }
 
-    console.log('Retrieved movimentacoes count:', movimentacoes?.length);
+    console.log('Total de movimentações recuperadas:', movimentacoes?.length);
 
     const contextoFinanceiro = prepararContextoFinanceiro(movimentacoes);
-    console.log('Prepared financial context:', JSON.stringify(contextoFinanceiro, null, 2));
+    console.log('Contexto financeiro preparado:', JSON.stringify(contextoFinanceiro, null, 2));
 
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
       throw new Error('GROQ_API_KEY não configurada');
     }
 
-    console.log('Sending request to Groq API...');
+    console.log('Enviando requisição para API Groq...');
     
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -51,54 +59,65 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente financeiro especializado em análise de dados financeiros.
-                     Analise os dados fornecidos e responda de forma clara e estruturada, seguindo estas diretrizes:
+            content: `Você é um assistente financeiro especializado em análise de dados financeiros corporativos.
+                     Analise os dados fornecidos e responda de forma estruturada e objetiva, seguindo estas diretrizes:
 
-                     1. Use emojis relevantes para tornar a resposta mais amigável
-                     2. Estruture a resposta em seções claras com títulos em negrito
-                     3. Sempre formate valores monetários adequadamente
-                     4. Seja direto e objetivo nas respostas
-                     5. Se a pergunta envolver uma data específica, confirme a data na resposta
-                     6. Se não houver dados suficientes, explique claramente o motivo
-                     7. Use tabelas quando apropriado para melhor visualização dos dados
-                     8. Destaque informações importantes em negrito
-                     9. Separe claramente diferentes seções da resposta
-                     10. Forneça um resumo conciso no início da resposta
+                     1. Seja direto e objetivo, evitando explicações desnecessárias
+                     2. Use formatação em negrito para destacar valores e informações importantes
+                     3. Formate valores monetários sempre com R$ e duas casas decimais
+                     4. Se a pergunta envolver datas, confirme-as na resposta
+                     5. Se faltar dados, explique claramente o que está faltando
+                     6. Use tabelas quando ajudar na visualização dos dados
+                     7. Forneça um resumo conciso no início
+                     8. Ao analisar tendências, compare com períodos anteriores
+                     9. Destaque variações significativas nos dados
+                     10. Sugira ações baseadas nos dados quando relevante
 
                      Dados disponíveis para análise:
                      
-                     📅 Data da Consulta: ${contextoFinanceiro.dataConsulta}
+                     📊 Data da Análise: ${contextoFinanceiro.dataConsulta}
 
-                     💰 Saldos por Conta:
+                     💰 Saldos Atuais por Conta:
                      ${contextoFinanceiro.saldos.map(s => `${s.conta}: ${s.valor}`).join('\n')}
 
-                     🏦 Saldo Total: ${contextoFinanceiro.saldoTotal}
+                     💵 Saldo Total: ${contextoFinanceiro.saldoTotal}
 
                      📝 Últimas Movimentações:
                      ${contextoFinanceiro.ultimasMovimentacoes
                        .map(m => `${m.data} - ${m.tipo}: ${m.valor} (${m.conta}) - ${m.descricao}`)
-                       .join('\n')}`
+                       .join('\n')}
+                       
+                     📈 Análise por Categoria:
+                     ${contextoFinanceiro.analiseCategoria?.map(c => 
+                       `${c.nome}: ${c.total} (${c.percentual}% do total)`
+                     ).join('\n')}
+
+                     🔄 Fluxo de Caixa:
+                     Total Entradas: ${contextoFinanceiro.totalEntradas}
+                     Total Saídas: ${contextoFinanceiro.totalSaidas}
+                     Saldo Período: ${contextoFinanceiro.saldoPeriodo}`
           },
           {
             role: 'user',
             content: query
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: 0.3,
+        max_tokens: 2000,
+        top_p: 0.8,
       }),
     });
 
-    console.log('Groq API response status:', response.status);
+    console.log('Status da resposta Groq:', response.status);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Groq API error response:', errorData);
+      console.error('Erro na resposta da API Groq:', errorData);
       throw new Error(`Erro na API Groq: ${response.status} - ${errorData}`);
     }
 
     const result = await response.json();
-    console.log('Groq API response received successfully');
+    console.log('Resposta da API Groq recebida com sucesso');
 
     return new Response(
       JSON.stringify({ answer: result.choices[0].message.content }),
@@ -106,10 +125,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in financial-assistant function:', error);
+    console.error('Erro na função do assistente financeiro:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Erro ao processar pergunta: ' + error.message,
+        error: 'Erro ao processar sua consulta: ' + error.message,
         details: error.stack
       }),
       { 
