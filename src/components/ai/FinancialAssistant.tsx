@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
 import { Loader2, AlertTriangle } from "lucide-react";
@@ -17,6 +18,7 @@ export const FinancialAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('groq');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +32,10 @@ export const FinancialAssistant = () => {
       console.log('Sending query to financial-assistant:', input);
       
       const { data, error } = await supabase.functions.invoke('financial-assistant', {
-        body: { query: input }
+        body: { 
+          query: input,
+          model: selectedModel
+        }
       });
 
       console.log('Response from financial-assistant:', { data, error });
@@ -98,23 +103,40 @@ export const FinancialAssistant = () => {
           </div>
         </ScrollArea>
         
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Faça uma pergunta sobre os dados financeiros..."
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              'Enviar'
-            )}
-          </Button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex gap-2">
+            <Select
+              value={selectedModel}
+              onValueChange={setSelectedModel}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecione o modelo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="groq">Groq (Padrão)</SelectItem>
+                <SelectItem value="grok">Grok X</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Faça uma pergunta sobre os dados financeiros..."
+              disabled={isLoading}
+            />
+            <Button type="submit" disabled={isLoading || !input.trim()}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Enviar'
+              )}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
