@@ -8,7 +8,6 @@ import ResumoFinanceiro from '@/components/relatorios/ResumoFinanceiro';
 import FiltrosRelatorios from '@/components/relatorios/FiltrosRelatorios';
 import GraficosRelatorios from '@/components/relatorios/GraficosRelatorios';
 import { DemonstrativoContabil } from '@/components/relatorios/DemonstrativoContabil/DemonstrativoContabil';
-import { FinancialAssistant } from '@/components/ai/FinancialAssistant';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Relatorios = () => {
@@ -128,7 +127,6 @@ const Relatorios = () => {
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="graficos">Gráficos</TabsTrigger>
           <TabsTrigger value="todas">Todas as Movimentações</TabsTrigger>
-          <TabsTrigger value="assistente">Assistente IA</TabsTrigger>
         </TabsList>
         
         <TabsContent value="demonstrativo">
@@ -179,10 +177,6 @@ const Relatorios = () => {
             onEdit={updateMovimentacao}
             onDelete={deleteMovimentacao}
           />
-        </TabsContent>
-
-        <TabsContent value="assistente">
-          <FinancialAssistant />
         </TabsContent>
       </Tabs>
     </div>
